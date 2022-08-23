@@ -33,7 +33,8 @@ int main()
 {
 	omp_set_nested(0);
 
-	int M = 700, N = 1000;
+	constexpr int M = 700;
+	constexpr int N = 1000;
 	int FIST_iters = 200;
 	int slices = 100;
 	UnbalancedSliced sliced;

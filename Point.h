@@ -1,4 +1,3 @@
-#pragma once
 /*
   Copyright (c) 2019 CNRS
   Nicolas Bonneel <nicolas.bonneel@liris.cnrs.fr>
@@ -27,14 +26,22 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#pragma once
 
+/// @brief Simple many-dimensional sample representation.
+/// @tparam DIM The dimensionality of the samples.
+/// @tparam T The internal data type of the samples.
 template<int DIM, typename T>
 class Point {
 public:
+	/// @brief Default ctor. Initializes a point at the origin.
 	Point<DIM, T>() {
 		memset(coords, 0, DIM * sizeof(T));
 	}
+
+	/// @brief Bracket-style accessor to the coordinates of the sample.
 	T operator[](int i) const { return coords[i]; };
+	/// @brief Bracket-style accessor to a reference of the coordinates of the sample.
 	T& operator[](int i) { return coords[i]; };
 
 	void operator+=(const Point<DIM, T>& rhs) {
@@ -58,6 +65,8 @@ public:
 		}
 		return true;
 	}
+
+	/// @brief Computes the squared norm of the vector from this sample to the origin.
 	T norm2() {
 		T s = 0;
 		for (int i = 0; i < DIM; i++) {
@@ -65,7 +74,8 @@ public:
 		}
 		return s;
 	}
-	T coords[DIM];
+
+	T coords[DIM]; ///< The coordinate of the sample, in n-dimensional space.
 };
 
 

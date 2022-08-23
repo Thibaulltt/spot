@@ -68,7 +68,7 @@ void * malloc_simd(const size_t size, const size_t alignment);
 void free_simd(void* mem);
 
 struct params {
-	params() {};
+	params() = default;
 	params(int d0, int f0, int d1, int f1, int d) :start0(d0), end0(f0), start1(d1), end1(f1) {};
 	int start0, end0, start1, end1;
 };
@@ -94,10 +94,17 @@ Point<2, T> BoxMuller() {
 	return p;
 }
 
-
+/// @brief Handles the projection of n-dimensional samples onto a one-dimensional line.
+/// @tparam DIM The dimensionality of the samples to project.
+/// @tparam T The internal type of the samples to project.
 template<int DIM, typename T>
 struct Projector {
-	Projector(const Point<DIM, T> &dir) : dir(dir) {};
+	/// @brief Constructor of the structure, initializing the 1D line to project onto.
+	explicit Projector(const Point<DIM, T> &dir) : dir(dir) {};
+
+	/// @brief Projects the given sample 'p' onto the line this projector uses.
+	/// @param p The sample to project.
+	/// @returns The sample position on the line.
 	double proj(const Point<DIM, T> &p) {
 		double proj = 0;
 		for (int i = 0; i < DIM; i++) {
@@ -105,19 +112,18 @@ struct Projector {
 		}
 		return proj;
 	}
-	Point<DIM, T> dir;
+
+	const Point<DIM, T> dir; ///< The 1D-line to project samples onto.
 };
 
 
-
+/// @brief Class responsible for performing the Unbalanced Sliced Partial Optimal Transport.
 class UnbalancedSliced {
+
 public:
-
-
-	// nearest neighbors in 1d
+	/// @brief Computes the nearest neighbors in 1d of the two histograms.
 	template<typename T>
 	void nearest_neighbor_match(const T *hist1, const T* hist2, const params &p, std::vector<int> &assignment) {
-
 		int cursor = p.start1;
 		for (int i = p.start0; i < p.end0; i++) {
 			T mind = std::numeric_limits<T>::max();
@@ -138,9 +144,13 @@ public:
 		}
 	}
 
-	// handles the case where the first sequence starts before or ends after the second sequence, or where the NN of the first (resp. last) elements of hist1 are the first (resp. last) elements of hist2
-	// also restricts problem size based on the number of non-injective values, but that won't be super useful
-	// returns 1 if hist1 entirely consumed ; 0 otherwise
+	/// @brief Reduces the range of the assignment problem in the 1D optimal transport problem.
+	/// @details This handles the case where the first sequence starts before or ends after the second sequence, or where the NN of the first (resp. last) elements of ``hist1``
+	/// are the first (resp. last) elements of ``hist2``. Also, it restricts the problem size based on the number of non-injective values, but that won't be super useful.
+	/// @param hist1 The first histogram, the source ('X' in the paper).
+	/// @param hist2 The second histogram, the target ('Y' in the paper).
+	/// @param assignment The injective assignment map ('a' in the paper).
+	/// @returns 1 if hist1 entirely consumed ; 0 otherwise
 	template<typename T>
 	int reduce_range(const T *hist1, const T* hist2, std::vector<int> &assignment, params &inparam, T& emd, int* assNN, int nbbij) {
 		params p0 = inparam;
@@ -161,7 +171,7 @@ public:
 		inparam.start1 = cursor1;
 
 		if (inparam.end0 == inparam.start0) {
-#pragma omp atomic
+	#pragma omp atomic
 			emd += localchange;
 			return 1;
 		}
@@ -182,7 +192,7 @@ public:
 		inparam.end1 = cursor1b + 1;
 
 		if (inparam.end0 == inparam.start0) {
-#pragma omp atomic
+	#pragma omp atomic
 			emd += localchange;
 			return 1;
 		}
@@ -211,7 +221,7 @@ public:
 		inparam.start1 = cursor;
 
 		if (inparam.start0 == inparam.end0) {
-#pragma omp atomic
+	#pragma omp atomic
 			emd += localchange;
 			return 1;
 		}
@@ -231,23 +241,19 @@ public:
 		inparam.end1 = cursor + 1;
 
 		if (inparam.start0 == inparam.end0) {
-#pragma omp atomic
+	#pragma omp atomic
 			emd += localchange;
 			return 1;
 		}
 
 
-#pragma omp atomic
+	#pragma omp atomic
 		emd += localchange;
 		return 0;
 	}
 
-
-
-	// handles trivial cases: M==N, M==N-1, M==1, or nearest neighbor map is injective
-	// return 1 = subproblem solved
-	// return 0 = problem not solved
-
+	/// @brief This handles trivial cases: M==N, M==N-1, M==1, or nearest neighbor map is injective
+	/// @returns True (1) if the sub-problem was solved, and false (0) if it wasn't.
 	template<typename T>
 	int handle_simple_cases(const params &p, const T* hist1, const T* hist2, int* assignment, int* assNN, T &value) {
 		int start0 = p.start0;
@@ -263,7 +269,7 @@ public:
 				assignment[start0 + i] = i + start1;
 				d += cost(hist1[start0 + i], hist2[start1 + i]);
 			}
-#pragma omp atomic
+	#pragma omp atomic
 			value += d;
 			return 1;
 		}
@@ -293,7 +299,7 @@ public:
 					assignment[start0 + i] = i + 1 + start1;
 				}
 			}
-#pragma omp atomic
+	#pragma omp atomic
 			value += best_s;
 			return 1;
 		}
@@ -301,12 +307,12 @@ public:
 			assignment[start0] = assNN[start0];
 			T c = cost(hist1[start0], hist2[assNN[start0]]);
 
-#pragma omp atomic
+	#pragma omp atomic
 			value += c;
 			return 1;
 		}
 
-// checks if NN is injective
+		// checks if NN is injective
 		{
 			int curId = 0;
 			T sumMin = 0;
@@ -339,7 +345,7 @@ public:
 				assignment[start0 + i] = ass;
 			}
 			if (valid) {
-#pragma omp atomic
+	#pragma omp atomic
 				value += sumMin;
 				return 1;
 			}
@@ -348,11 +354,8 @@ public:
 		return 0;
 	}
 
-
-
-
-
-// decompose a problem into subproblems in (quasi) linear time.
+	/// @brief Decomposes a problem into subproblems in (quasi) linear time.
+	/// @returns True if the problem was split, false if it wasn't worth it.
 	template<typename T>
 	bool linear_time_decomposition(const params &p, const T* hist1, const T* hist2, int* assNN, std::vector<params>& newp) {
 
@@ -450,7 +453,6 @@ public:
 
 		return true;
 	}
-
 
 	template<typename T>
 	void simple_solve(const params &p, const T* hist1, const T* hist2, int* assignment, int* assNN, T &value) {
@@ -595,10 +597,8 @@ public:
 		}
 	}
 
-
 	template<typename T>
-	T transport1d(const T *hist1, const T* hist2, int M0, int N0, std::vector<int> &assignment, double* timingSplits = NULL) {
-
+	T transport1d(const T *hist1, const T* hist2, int M0, int N0, std::vector<int> &assignment, double* timingSplits = nullptr) {
 		assignment.resize(M0);
 		params initp(0, M0, 0, N0, 0);
 		T value = 0;
@@ -637,7 +637,7 @@ public:
 			todo.push_back(initp);
 		}
 
-#pragma omp parallel for schedule(dynamic)
+	#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < todo.size(); i++) {
 
 			params p = todo[i];
@@ -666,14 +666,10 @@ public:
 		return value;
 	}
 
-
-
-	// advect = true : used for matching one distrib to another such as in our FIST algorithm : this function will advect cloud1 to cloud2 along a sliced wasserstein flow
-	// advect = false : used to compute barycenters or sliced EMD (we don't perform any stochastic gradient descent then, this will merely compute the sliced wasserstein distance)
-
 	template<int DIM, typename T>
 	double correspondencesNd(std::vector<Point<DIM, T> > &cloud1, const std::vector<Point<DIM, T> > &cloud2, int niter, bool advect = false) {
-
+		// advect = true : used for matching one distrib to another such as in our FIST algorithm : this function will advect cloud1 to cloud2 along a sliced wasserstein flow
+		// advect = false : used to compute barycenters or sliced EMD (we don't perform any stochastic gradient descent then, this will merely compute the sliced wasserstein distance)
 
 		// we won't use the indices here for the moment nor the assignment, so if memory is an issue, we can remove the variables below
 		std::vector<std::pair<T, int > > cloud1Idx(cloud1.size());
@@ -753,11 +749,8 @@ public:
 		return d*2.0/niter;
 	}
 
-
 	template<int DIM, typename T>  // Mbary should be less than min_i(bary[i].size())
 	void unbalanced_barycenter(int Mbary, int niters, int nslices, const std::vector<T> &weights, const std::vector< std::vector<Point<DIM, T> > > &points, std::vector<Point<DIM, T> > &barycenter) {
-
-
 		auto start = std::chrono::system_clock::now();
 
 		barycenter.resize(Mbary);
@@ -811,7 +804,7 @@ public:
 			std::vector<Point<DIM, T> > newbary = barycenter;
 			for (int cloud = 0; cloud < points.size(); cloud++) {
 
-#pragma omp parallel
+	#pragma omp parallel
 				{
 					int thread_num = omp_get_thread_num();
 					cloud2Idx[thread_num].resize(points[cloud].size());
@@ -819,7 +812,7 @@ public:
 					std::vector<int> corr1d;
 					double local_d = 0;
 
-#pragma omp for schedule(dynamic)
+	#pragma omp for schedule(dynamic)
 					for (int slice = 0; slice < nslices; slice++) { // number of random slices
 
 						Point<DIM, T> dir = dirs[slice];
@@ -853,7 +846,7 @@ public:
 						for (int i = 0; i < corr1d.size(); i++) {
 							local_d += weights[cloud] * cost(projHist1[thread_num][i], projHist2[corr1d[i]]);
 						}
-#pragma omp critical
+	#pragma omp critical
 						{
 							for (int i = 0; i < cloud1Idx[thread_num].size(); i++) {
 								int perm = cloud1Idx[thread_num][i].second;
@@ -864,7 +857,7 @@ public:
 						}
 					}
 					free_simd(projHist2);
-#pragma omp atomic
+	#pragma omp atomic
 					d += local_d;
 				}
 
@@ -879,10 +872,33 @@ public:
 
 	}
 
+	/// @brief Simple typedef to the CImg library type in order to simplify declarations later.
+	/// @tparam T The internal data type of the image to create.
+	template<typename T> using image_t = cimg_library::CImg<T>;
 
-// transport-based ICP, using either a rigid transform (scaling = false) or similarity transform (scaling = true)
+	/// @brief Computes FIST : a Transport-based ICP, using either a rigid transform or similarity transform.
+	/// @tparam DIM The dimensionality of the datasets to register.
+	/// @tparam T The internal data type of the samples from both datasets.
+	/// @param niters The number of iteration to perform (MAXIMUM ??? OR ALWAYS PERFORMS THEM ???)
+	/// @param nslices The number of 1D-slices to perform when computing the correspondances at each iteration.
+	/// @param pointsSrc The original point cloud, the one to register ('X' in the paper).
+	/// @param pointsDst The target point cloud, the one to register against ('Y' in the paper).
+	/// @param rot The rotation matrix extracted from the FIST algorithm.
+	/// @param trans The translation vector extracted from the FIST algorithm.
+	/// @param useScaling If true, will extract a similarity transform (isotropic scaling). Otherwise, will extract a rigid transform.
+	/// @param scaling The scaling factor extracted from this algorithm, if useScaling was set to true.
 	template<int DIM, typename T>
-	void fast_iterative_sliced_transport(int niters, int nslices, std::vector<Point<DIM, T> > &pointsSrc, const std::vector<Point<DIM, T> > &pointsDst, std::vector<double> &rot, std::vector<double> &trans, bool useScaling, double &scaling) {
+	void fast_iterative_sliced_transport(
+			int niters,
+			int nslices,
+			std::vector<Point<DIM, T> > &pointsSrc,
+			const std::vector<Point<DIM, T> > &pointsDst,
+			std::vector<double> &rot,
+			std::vector<double> &trans,
+			bool useScaling,
+			double &scaling
+	) {
+		using default_image_t = image_t<double>;
 
 		rot.resize(DIM*DIM);
 		trans.resize(DIM);
@@ -916,7 +932,14 @@ public:
 					}
 				}
 			}
-			cimg_library::CImg<double> mat(cov, DIM, DIM), S(1,DIM), U(DIM, DIM), V(DIM, DIM), orth(DIM,DIM), diag(DIM, DIM,1,1,0.0), rotM(DIM, DIM);
+			default_image_t mat(cov, DIM, DIM);
+			default_image_t S(1, DIM);
+			default_image_t U(DIM, DIM);
+			default_image_t V(DIM, DIM);
+			default_image_t orth(DIM, DIM);
+			default_image_t diag(DIM, DIM, 1, 1, 0.0);
+			default_image_t rotM(DIM, DIM);
+
 			mat.SVD(U, S, V, true, 100, 0.0);
 			orth = U * V.get_transpose();
 			double d = orth.det();
@@ -941,16 +964,21 @@ public:
 
 			rotM = U * diag*V.get_transpose();
 
-			cimg_library::CImg<double> rotG(const_cast<double*>(&rot[0]), DIM, DIM,1,1,true), transG(const_cast<double*>(&trans[0]), 1,DIM,1,1,true), C1(&center1[0], 1, DIM), C2(&center2[0], 1, DIM);
+			default_image_t rotG(const_cast<double*>(&rot[0]), DIM, DIM, 1, 1, true);
+			default_image_t transG(const_cast<double*>(&trans[0]), 1, DIM, 1, 1, true);
+			default_image_t C1(&center1[0], 1, DIM);
+			default_image_t C2(&center2[0], 1, DIM);
 			rotG = rotM*rotG;
 			transG = transG + C2 - C1;
 
 			for (int i = 0; i < pointsSrc.size(); i++) {
-				cimg_library::CImg<T> P(const_cast<T*>(&pointsSrc[i][0]), 1,DIM,1,1,true);
+				image_t<T> P(const_cast<T*>(&pointsSrc[i][0]), 1,DIM,1,1,true);
 				P = scal*(rotM * (P - C1)) + C2;
 			}
 		}
-		cimg_library::CImg<double> rotG(const_cast<double*>(&rot[0]), DIM, DIM, 1, 1, true), transG(const_cast<double*>(&trans[0]), 1, DIM, 1, 1, true);
+
+		default_image_t rotG(const_cast<double*>(&rot[0]), DIM, DIM, 1, 1, true);
+		default_image_t transG(const_cast<double*>(&trans[0]), 1, DIM, 1, 1, true);
 		if (useScaling)
 			transG = scaling*rotG * transG;
 		else
