@@ -28,6 +28,8 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "./micro_benchmark.hpp"
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -908,7 +910,10 @@ public:
 			rot[i*DIM + i] = 1;
 		std::fill(trans.begin(), trans.end(), 0);
 
+		std::shared_ptr<micro_benchmarks::TimingsLogger> time_logger = std::make_shared<micro_benchmarks::TimingsLogger>(niters);
+
 		for (int iter = 0; iter < niters; iter++) {
+			time_logger->start_lap();
 			std::vector<Point<DIM, T> > pointsSrcCopy(pointsSrc);
 			correspondencesNd(pointsSrcCopy, pointsDst, nslices, true);
 
@@ -975,6 +980,8 @@ public:
 				image_t<T> P(const_cast<T*>(&pointsSrc[i][0]), 1,DIM,1,1,true);
 				P = scal*(rotM * (P - C1)) + C2;
 			}
+
+			time_logger->stop_lap();
 		}
 
 		default_image_t rotG(const_cast<double*>(&rot[0]), DIM, DIM, 1, 1, true);
@@ -983,8 +990,10 @@ public:
 			transG = scaling*rotG * transG;
 		else
 			transG = rotG * transG;
+
+		time_logger->compute_timing_stats();
+		time_logger->print_timings("", "[Time statistics]");
 	}
 
 
-
-}; // end class
+};

@@ -28,6 +28,18 @@ namespace micro_benchmarks {
 	/// @brief Like the duration_t type, but forced to be in double-precision floating point.
 	using fine_duration_t = std::chrono::duration<double, duration_t::period>;
 
+	/// @brief Some simple statistics of a series of time periods.
+	struct TimeSeriesStatistics {
+		typedef std::shared_ptr<TimeSeriesStatistics> Ptr; ///< Typedef for a pointer to this type
+
+		TimeSeriesStatistics();
+		~TimeSeriesStatistics() = default;
+
+		coarse_duration_t mean, min, max, variance, std_dev;
+		duration_t quartile_1, median, quartile_3;
+		duration_t percentile_90, percentile_95, percentile_99;
+	};
+
 	class TimingsLogger {
 
 	public: /* Constructors and destructors */
@@ -63,14 +75,18 @@ namespace micro_benchmarks {
 		/// @brief Resets the iteration times computed for the last run of fast_iterative_sliced_optimal_transfer().
 		void reset_timings(unsigned int number_laps);
 
+		/// @brief Gets a const reference to the iteration times vector (for outside use).
+		const std::vector<duration_t>& get_iteration_times() const { return this->iteration_times; }
+
+		/// @brief Gets a copy of the currently-computed statistics for all iteration times.
+		const TimeSeriesStatistics::Ptr& get_time_statistics() const { return this->stats; };
+
 	protected:
 		std::vector<duration_t> iteration_times; ///< The iteration times, updated each time fast_iterative_sliced_optimal_transfer() is called.
 		unsigned int last_lap; ///< The last lap index (whenever using the {start|stop}_lap() functions)
 		timepoint_t last_start; ///< The last start time point of the {start|stop}_lap() functions
 
-		coarse_duration_t mean, min, max, variance, std_dev;
-		duration_t quartile_1, median, quartile_3;
-		duration_t percentile_90, percentile_95, percentile_99;
+		TimeSeriesStatistics::Ptr stats; ///< The computed statistics for this series of time periods.
 	};
 
 	/// @brief RAII-style lap timer.
