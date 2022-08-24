@@ -1,6 +1,10 @@
 # IntelliJ files :
 .idea/
 
+# Build folder (usual paths) :
+build/
+cmake-*/
+
 # Final executables :
 FIST
 colorTransfer
