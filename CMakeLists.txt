@@ -12,6 +12,7 @@ MESSAGE(STATUS "This can only compile on macOS or Linux.")
 MESSAGE(STATUS "Use the Visual Studio pre-packaged solutions otherwise.")
 
 FIND_PACKAGE(OpenMP REQUIRED)
+FIND_PACKAGE(fmt REQUIRED)
 
 # Compile the executables with the same compile flags as the Makefile.
 # Only difference : no optimization flags (determined by CMAKE_BUILD_TYPE).
@@ -28,14 +29,18 @@ ADD_COMPILE_OPTIONS(${SPOT_COMPILE_FLAGS})
 ADD_EXECUTABLE(FIST
 	mainFIST.cpp
 	UnbalancedSliced.cpp
+	micro_benchmark.cpp
 )
 TARGET_LINK_LIBRARIES(FIST
 	PUBLIC OpenMP::OpenMP_CXX
+	PUBLIC fmt::fmt
 )
 ADD_EXECUTABLE(colorTransfer
 	mainColorTransfer.cpp
 	UnbalancedSliced.cpp
+	micro_benchmark.cpp
 )
 TARGET_LINK_LIBRARIES(colorTransfer
 	PUBLIC OpenMP::OpenMP_CXX
+	PUBLIC fmt::fmt
 )
