@@ -11,8 +11,15 @@ SET(CMAKE_CXX_STANDARD 11)
 MESSAGE(STATUS "This can only compile on macOS or Linux.")
 MESSAGE(STATUS "Use the Visual Studio pre-packaged solutions otherwise.")
 
+INCLUDE(CTest)
+IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Release)
+	MESSAGE(STATUS "Enabled testing.")
+	ENABLE_TESTING()
+ENDIF()
 FIND_PACKAGE(OpenMP REQUIRED)
 FIND_PACKAGE(fmt REQUIRED)
+FIND_PACKAGE(assimp REQUIRED)
+FIND_PACKAGE(glm REQUIRED)
 
 # Compile the executables with the same compile flags as the Makefile.
 # Only difference : no optimization flags (determined by CMAKE_BUILD_TYPE).
@@ -25,6 +32,15 @@ ENDIF()
 # Enable the compilation flags :
 ADD_COMPILE_OPTIONS(${SPOT_COMPILE_FLAGS})
 
+ADD_SUBDIRECTORY(tests)
+
+ADD_LIBRARY(glm_bridge INTERFACE
+	glm_bridge.hpp
+)
+TARGET_LINK_LIBRARIES(glm_bridge
+	INTERFACE glm
+)
+
 # Add the executables :
 ADD_EXECUTABLE(FIST
 	mainFIST.cpp
@@ -34,6 +50,8 @@ ADD_EXECUTABLE(FIST
 TARGET_LINK_LIBRARIES(FIST
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
+	PUBLIC assimp::assimp
+	PUBLIC glm_bridge
 )
 ADD_EXECUTABLE(colorTransfer
 	mainColorTransfer.cpp

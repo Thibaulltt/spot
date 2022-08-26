@@ -28,6 +28,8 @@
 */
 #pragma once
 
+#include <glm/glm.hpp>
+
 /// @brief Simple many-dimensional sample representation.
 /// @tparam DIM The dimensionality of the samples.
 /// @tparam T The internal data type of the samples.
@@ -37,6 +39,13 @@ public:
 	/// @brief Default ctor. Initializes a point at the origin.
 	Point<DIM, T>() {
 		memset(coords, 0, DIM * sizeof(T));
+	}
+
+	template <glm::qualifier precision>
+	explicit Point<DIM, T>(glm::vec<DIM, T, precision> vec) {
+		for (int i = 0; i < DIM; i++) {
+			coords[i] = vec[i];
+		}
 	}
 
 	/// @brief Bracket-style accessor to the coordinates of the sample.

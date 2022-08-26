@@ -13,6 +13,8 @@ two random pointsets in dimension three. The `FIST` executable outputs the trans
 
 ## Build
 
+Dependencies : `fmtlib` ([link](https://www.github.com/fmtlib/fmt/)), `assimp` ([link](https://www.github.com/assimp/assimp/))
+
 * Linux:
 
         make  

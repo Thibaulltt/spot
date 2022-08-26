@@ -71,8 +71,13 @@ void free_simd(void* mem);
 
 struct params {
 	params() = default;
+	/// @brief Fully-specified ctor, where the start and end of contiguous pairings in both distributions are given.
 	params(int d0, int f0, int d1, int f1, int d) :start0(d0), end0(f0), start1(d1), end1(f1) {};
-	int start0, end0, start1, end1;
+
+	int start0; ///< Start of a series of contiguous pairings, in the source distribution.
+	int end0; ///< End of a series of contiguous pairings, in the source distribution.
+	int start1; ///< Start of a series of contiguous pairings, in the target distribution.
+	int end1; ///< End of a series of contiguous pairings, in the target distribution.
 };
 
 
@@ -255,6 +260,13 @@ public:
 	}
 
 	/// @brief This handles trivial cases: M==N, M==N-1, M==1, or nearest neighbor map is injective
+	/// @tparam The internal data type of the distributions' samples.
+	/// @param p The parameters of this sub-problem : their begins and ends in the current state of things.
+	/// @param hist1 The coordinates of the first distribution along the random direction chosen.
+	/// @param hist2 The coordinates of the second distribution along the random direction chosen.
+	/// @param assignment The injective mapping 'optimal' for this subproblem.
+	/// @param assNN The assignment of the nearest neighbor ???
+	/// @param value Represents the cost of this case. It's an in/out variable that's always being added to.
 	/// @returns True (1) if the sub-problem was solved, and false (0) if it wasn't.
 	template<typename T>
 	int handle_simple_cases(const params &p, const T* hist1, const T* hist2, int* assignment, int* assNN, T &value) {
@@ -265,16 +277,21 @@ public:
 		int M = end0 - start0;
 		int N = end1 - start1;
 		if (M == 0) return 1;
+		/* Pair all points of source to target, since they're both sorted and have the same size. */
 		if (M == N) {
 			T d = 0;
 			for (int i = 0; i < M; i++) {
 				assignment[start0 + i] = i + start1;
 				d += cost(hist1[start0 + i], hist2[start1 + i]);
 			}
-	#pragma omp atomic
+			#pragma omp atomic
 			value += d;
 			return 1;
 		}
+		/* One spot is available.
+		 * Where could it be ?
+		 * Find out by summing costs along all possible spots.
+		 */
 		if (M == N - 1) {
 			T d1 = 0;
 			T d2 = 0;
@@ -301,7 +318,7 @@ public:
 					assignment[start0 + i] = i + 1 + start1;
 				}
 			}
-	#pragma omp atomic
+			#pragma omp atomic
 			value += best_s;
 			return 1;
 		}
@@ -309,12 +326,12 @@ public:
 			assignment[start0] = assNN[start0];
 			T c = cost(hist1[start0], hist2[assNN[start0]]);
 
-	#pragma omp atomic
+			#pragma omp atomic
 			value += c;
 			return 1;
 		}
 
-		// checks if NN is injective
+		/* Checks if NN is injective :  */
 		{
 			int curId = 0;
 			T sumMin = 0;
@@ -347,7 +364,7 @@ public:
 				assignment[start0 + i] = ass;
 			}
 			if (valid) {
-	#pragma omp atomic
+				#pragma omp atomic
 				value += sumMin;
 				return 1;
 			}
@@ -357,6 +374,7 @@ public:
 	}
 
 	/// @brief Decomposes a problem into subproblems in (quasi) linear time.
+	/// @tparam T The data type of the histograms to decompose into problems.
 	/// @returns True if the problem was split, false if it wasn't worth it.
 	template<typename T>
 	bool linear_time_decomposition(const params &p, const T* hist1, const T* hist2, int* assNN, std::vector<params>& newp) {
@@ -599,6 +617,8 @@ public:
 		}
 	}
 
+	/// @brief Performs the 1D Sliced Partial Optimal Transport.
+	/// @returns
 	template<typename T>
 	T transport1d(const T *hist1, const T* hist2, int M0, int N0, std::vector<int> &assignment, double* timingSplits = nullptr) {
 		assignment.resize(M0);
@@ -623,7 +643,7 @@ public:
 
 		bool res = linear_time_decomposition(initp, hist1, hist2, &assNN[0], splits);
 
-		std::vector<params > todo;
+		std::vector<params> todo;
 		if (res) {
 			todo.reserve(splits.size());
 			for (int i = 0; i < splits.size(); i++) {
@@ -668,21 +688,32 @@ public:
 		return value;
 	}
 
+	/// @brief Puts into correspondance two distributions by 1D-sliced-optimal-transport.
+	/// @details Chooses a set of random directions and projects the distributions' points onto it. Then, it performs 1D sliced optimal transport and returns
+	/// the matched distributions (directly in the input vectors). Returns the sliced Wasserstein distance in any case.
+	/// @tparam DIM The dimensionality of the point clouds to match.
+	/// @tparam T The data type of the distributions' samples.
+	/// @param cloud1 The first distribution, to register to cloud2.
+	/// @param cloud2 The second distribution, which cloud1 will be matched to.
+	/// @param niter The number of iterations/1D-slices to perform for this matching/gradient descent.
+	/// @param advect If true, matches the distributions together. If false, computes barycenters or sliced EMD.
+	/// @returns The sliced Wasserstein distance. If the point clouds are modified, they are done in-place directly in the variables passed to the function.
 	template<int DIM, typename T>
 	double correspondencesNd(std::vector<Point<DIM, T> > &cloud1, const std::vector<Point<DIM, T> > &cloud2, int niter, bool advect = false) {
-		// advect = true : used for matching one distrib to another such as in our FIST algorithm : this function will advect cloud1 to cloud2 along a sliced wasserstein flow
-		// advect = false : used to compute barycenters or sliced EMD (we don't perform any stochastic gradient descent then, this will merely compute the sliced wasserstein distance)
+		// advect = true : used for matching one distrib to another such as in our FIST
+		//                 algorithm. This function will advect cloud1 to cloud2 along
+		//                 a sliced wasserstein flow
+		// advect = false: used to compute barycenters or sliced EMD (we don't perform
+		//                 any stochastic gradient descent then, this will merely compute
+		//                 the sliced wasserstein distance).
 
+		Point<DIM, T> dir; ///< Stores the current direction points are projected along.
 		// we won't use the indices here for the moment nor the assignment, so if memory is an issue, we can remove the variables below
-		std::vector<std::pair<T, int > > cloud1Idx(cloud1.size());
-		std::vector<std::pair<T, int > > cloud2Idx(cloud2.size());
-
-
-		Point<DIM, T> dir;
-		std::vector<Point<DIM, T> > deltas(cloud1.size(), Point<DIM, T>());
-
+		std::vector<std::pair<T, int>> cloud1Idx(cloud1.size());
+		std::vector<std::pair<T, int>> cloud2Idx(cloud2.size());
 		T* projHist1 = (T*)malloc_simd(cloud1.size() * sizeof(T), 32);
 		T* projHist2 = (T*)malloc_simd(cloud2.size() * sizeof(T), 32);
+		//std::vector<Point<DIM, T>> deltas(cloud1.size(), Point<DIM, T>());
 
 		engine.seed(10);
 
@@ -690,7 +721,8 @@ public:
 		double d = 0;
 		for (int iter = 0; iter < niter; iter++) { // number of random slices
 
-			// random directions
+			// Choose one random direction, in n-dimensions. BoxMuller returns a random 2D point, and its
+			// coordinates are copied into the direction's fields. It is then normalized.
 			double n = 0;
 			for (int i = 0; i < DIM; i+=2) {
 				Point<2, double> randGauss = BoxMuller<double>();
@@ -718,7 +750,8 @@ public:
 				cloud2Idx[i] = std::make_pair(proj.proj(cloud2[i]), i);
 			}
 
-
+			// Sort both distributions.
+			// WARNING : By default, std::pair<> sorts based on lexicographical order : compare the first element, then the second.
 			std::thread mythread( [&]{std::sort(cloud1Idx.begin(), cloud1Idx.end()); } );
 			std::sort(cloud2Idx.begin(), cloud2Idx.end());
                         mythread.join();
@@ -770,12 +803,12 @@ public:
 		std::vector<Point<DIM, T> > dirs(nslices);
 		for (int slice = 0; slice < nslices; slice++) {
 			if (DIM == 2) {
-				double theta = slice*M_PI / nslices;
+				double theta = slice * M_PI / nslices;
 				dirs[slice][0] = cos(theta);
 				dirs[slice][1] = sin(theta);
 			} else {
 				double n = 0;
-				for (int i = 0; i < DIM; i+=2) {
+				for (int i = 0; i < DIM; i += 2) {
 					Point<2, double> randGauss = BoxMuller<double>();
 					dirs[slice][i] = randGauss[0];
 					n += dirs[slice][i] * dirs[slice][i];
@@ -791,12 +824,12 @@ public:
 			}
 		}
 
-		std::vector<T*> projHist1(omp_get_max_threads());
-		for (int i=0; i< omp_get_max_threads() ; i++)
-			projHist1[i] = (T*)malloc_simd(barycenter.size() * sizeof(T), 32);
+		std::vector<T *> projHist1(omp_get_max_threads());
+		for (int i = 0; i < omp_get_max_threads(); i++)
+			projHist1[i] = (T *) malloc_simd(barycenter.size() * sizeof(T), 32);
 
-		std::vector<std::vector<std::pair<T, int > > > cloud1Idx(omp_get_max_threads(), std::vector<std::pair<T, int > >(Mbary));
-		std::vector<std::vector<std::pair<T, int > > > cloud2Idx(omp_get_max_threads());
+		std::vector<std::vector<std::pair<T, int> > > cloud1Idx(omp_get_max_threads(), std::vector<std::pair<T, int> >(Mbary));
+		std::vector<std::vector<std::pair<T, int> > > cloud2Idx(omp_get_max_threads());
 
 		for (int iter = 0; iter < niters; iter++) {
 
@@ -805,16 +838,15 @@ public:
 			std::vector<Point<DIM, T> > offset(barycenter.size());
 			std::vector<Point<DIM, T> > newbary = barycenter;
 			for (int cloud = 0; cloud < points.size(); cloud++) {
-
-	#pragma omp parallel
+				#pragma omp parallel
 				{
 					int thread_num = omp_get_thread_num();
 					cloud2Idx[thread_num].resize(points[cloud].size());
-					T* projHist2 = (T*)malloc_simd(points[cloud].size() * sizeof(T), 32);
+					T *projHist2 = (T *) malloc_simd(points[cloud].size() * sizeof(T), 32);
 					std::vector<int> corr1d;
 					double local_d = 0;
 
-	#pragma omp for schedule(dynamic)
+					#pragma omp for schedule(dynamic)
 					for (int slice = 0; slice < nslices; slice++) { // number of random slices
 
 						Point<DIM, T> dir = dirs[slice];
@@ -827,13 +859,12 @@ public:
 						for (int i = 0; i < points[cloud].size(); i++) {
 							cloud2Idx[thread_num][i] = std::make_pair(proj.proj(points[cloud][i]), i);
 						}
-                                                std::thread mythread( [&]{
-                                                                        std::sort(cloud1Idx[thread_num].begin(), cloud1Idx[thread_num].end());
-
-                                                                        for (int i = 0; i < Mbary; i++) {
-                                                                          projHist1[thread_num][i] = cloud1Idx[thread_num][i].first;
-                                                                        }
-                                                                      });
+						std::thread mythread([&] {
+							std::sort(cloud1Idx[thread_num].begin(), cloud1Idx[thread_num].end());
+							for (int i = 0; i < Mbary; i++) {
+								projHist1[thread_num][i] = cloud1Idx[thread_num][i].first;
+							}
+						});
 
 						std::sort(cloud2Idx[thread_num].begin(), cloud2Idx[thread_num].end());
 
@@ -841,37 +872,36 @@ public:
 							projHist2[i] = cloud2Idx[thread_num][i].first;
 						}
 
-                                                mythread.join();
+						mythread.join();
 						transport1d(projHist1[thread_num], projHist2, Mbary, points[cloud].size(), corr1d);
-
 
 						for (int i = 0; i < corr1d.size(); i++) {
 							local_d += weights[cloud] * cost(projHist1[thread_num][i], projHist2[corr1d[i]]);
 						}
-	#pragma omp critical
+
+						#pragma omp critical
 						{
 							for (int i = 0; i < cloud1Idx[thread_num].size(); i++) {
 								int perm = cloud1Idx[thread_num][i].second;
 								for (int j = 0; j < DIM; j++) {
-									newbary[perm][j] += DIM * (weights[cloud] * (projHist2[corr1d[i]] - projHist1[thread_num][i])*dir[j]) / nslices;
+									newbary[perm][j] += DIM * (weights[cloud] * (projHist2[corr1d[i]] - projHist1[thread_num][i]) * dir[j]) / nslices;
 								}
 							}
 						}
 					}
 					free_simd(projHist2);
-	#pragma omp atomic
+
+					#pragma omp atomic
 					d += local_d;
 				}
-
 			}
 			barycenter = newbary;
 		}
 
 
-		for (int i=0; i<omp_get_max_threads(); i++)
+		for (int i = 0; i < omp_get_max_threads(); i++) {
 			free_simd(projHist1[i]);
-
-
+		}
 	}
 
 	/// @brief Simple typedef to the CImg library type in order to simplify declarations later.
@@ -889,6 +919,7 @@ public:
 	/// @param trans The translation vector extracted from the FIST algorithm.
 	/// @param useScaling If true, will extract a similarity transform (isotropic scaling). Otherwise, will extract a rigid transform.
 	/// @param scaling The scaling factor extracted from this algorithm, if useScaling was set to true.
+	/// @param print_final_timings Enables or disables the printing of some iteration time statistics. False if undefined.
 	template<int DIM, typename T>
 	void fast_iterative_sliced_transport(
 			int niters,
@@ -898,7 +929,8 @@ public:
 			std::vector<double> &rot,
 			std::vector<double> &trans,
 			bool useScaling,
-			double &scaling
+			double &scaling,
+			bool print_final_timings = false
 	) {
 		using default_image_t = image_t<double>;
 
@@ -914,9 +946,12 @@ public:
 
 		for (int iter = 0; iter < niters; iter++) {
 			time_logger->start_lap();
+
+			/* Compute the correspondances between the two points at this stage : */
 			std::vector<Point<DIM, T> > pointsSrcCopy(pointsSrc);
 			correspondencesNd(pointsSrcCopy, pointsDst, nslices, true);
 
+			/* Compute the centers of both the source, and the 'registered' source */
 			Point<DIM, T> center1, center2;
 			for (int i = 0; i < pointsSrc.size(); i++) {
 				center1 += pointsSrc[i];
@@ -925,8 +960,8 @@ public:
 			center1 *= (1.0 / pointsSrc.size());
 			center2 *= (1.0 / pointsSrc.size());
 
-
-			double cov[DIM*DIM];
+			/* Compute the covariance matrix : */
+			double cov[DIM*DIM]; ///< The covariance matrix of both distributions after centering
 			memset(cov, 0, DIM*DIM * sizeof(cov[0]));
 			for (int i = 0; i < pointsSrc.size(); i++) {
 				Point<DIM, T> p = pointsSrc[i] - center1;
@@ -938,8 +973,8 @@ public:
 				}
 			}
 			default_image_t mat(cov, DIM, DIM);
-			default_image_t S(1, DIM);
-			default_image_t U(DIM, DIM);
+			default_image_t S(1, DIM); ///< The eigenvalues extracted from the covariance matrix's SVD
+			default_image_t U(DIM, DIM); ///< The eigenvectors extracted from the covariance matrix's SVD
 			default_image_t V(DIM, DIM);
 			default_image_t orth(DIM, DIM);
 			default_image_t diag(DIM, DIM, 1, 1, 0.0);
@@ -991,8 +1026,10 @@ public:
 		else
 			transG = rotG * transG;
 
-		time_logger->compute_timing_stats();
-		time_logger->print_timings("", "[Time statistics]");
+		if (print_final_timings) {
+			time_logger->compute_timing_stats();
+			time_logger->print_timings("", "[Time statistics]");
+		}
 	}
 
 

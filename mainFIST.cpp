@@ -26,12 +26,16 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "UnbalancedSliced.h"
 
+#include "UnbalancedSliced.h"
+#include "model.hpp"
 
 int main()
 {
 	omp_set_nested(0);
+
+	auto scene = load_model_file("/home/thib/Documents/data/medmax/meshes/Test/bunny.off");
+	print_aiScene_contents(scene);
 
 	constexpr int M = 700;
 	constexpr int N = 1000;
