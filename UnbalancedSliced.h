@@ -72,7 +72,7 @@ void free_simd(void* mem);
 struct params {
 	params() = default;
 	/// @brief Fully-specified ctor, where the start and end of contiguous pairings in both distributions are given.
-	params(int d0, int f0, int d1, int f1, int d) :start0(d0), end0(f0), start1(d1), end1(f1) {};
+	params(int d0, int f0, int d1, int f1, int d) : start0(d0), end0(f0), start1(d1), end1(f1) {};
 
 	int start0; ///< Start of a series of contiguous pairings, in the source distribution.
 	int end0; ///< End of a series of contiguous pairings, in the source distribution.
@@ -129,6 +129,11 @@ class UnbalancedSliced {
 
 public:
 	/// @brief Computes the nearest neighbors in 1d of the two histograms.
+	/// @tparam T The data type of the samples to match.
+	/// @param hist1 The first distribution to match.
+	/// @param hist2 The second distribution to match.
+	/// @param p The start/end fields of the problem to nearest-neighbor-match.
+	/// @param assignment An in/out variable containing the (possibly non-injective) assignment between hist1 and hist2.
 	template<typename T>
 	void nearest_neighbor_match(const T *hist1, const T* hist2, const params &p, std::vector<int> &assignment) {
 		int cursor = p.start1;
@@ -141,11 +146,11 @@ public:
 				if (d <= mind) {
 					mind = d;
 					minj = j;
-				} else
-					if (d > mind+std::numeric_limits<T>::epsilon()) {
+				} else {
+					if (d > mind + std::numeric_limits<T>::epsilon()) {
 						break;
 					}
-
+				}
 			}
 			assignment[i] = minj;
 		}
@@ -154,12 +159,16 @@ public:
 	/// @brief Reduces the range of the assignment problem in the 1D optimal transport problem.
 	/// @details This handles the case where the first sequence starts before or ends after the second sequence, or where the NN of the first (resp. last) elements of ``hist1``
 	/// are the first (resp. last) elements of ``hist2``. Also, it restricts the problem size based on the number of non-injective values, but that won't be super useful.
+	/// @tparam T The sample type of the internal samples for both distributions.
 	/// @param hist1 The first histogram, the source ('X' in the paper).
 	/// @param hist2 The second histogram, the target ('Y' in the paper).
+	/// @param inparam The start/end bounds for both assignment problems.
 	/// @param assignment The injective assignment map ('a' in the paper).
+	/// @param assNN The original nearest-neighbor assignment map. Remains unchanged.
+	/// @param nbbij The number of non-injective values in the original nearest-neighbor assignment.
 	/// @returns 1 if hist1 entirely consumed ; 0 otherwise
 	template<typename T>
-	int reduce_range(const T *hist1, const T* hist2, std::vector<int> &assignment, params &inparam, T& emd, int* assNN, int nbbij) {
+	int reduce_range(const T *hist1, const T* hist2, std::vector<int> &assignment, params &inparam, T& emd, const int* assNN, int nbbij) {
 		params p0 = inparam;
 
 		/// hist1 (partly) at the left of hist2 : can match the outside of hist1 to the begining of hist2
@@ -260,7 +269,7 @@ public:
 	}
 
 	/// @brief This handles trivial cases: M==N, M==N-1, M==1, or nearest neighbor map is injective
-	/// @tparam The internal data type of the distributions' samples.
+	/// @tparam T The internal data type of the distributions' samples.
 	/// @param p The parameters of this sub-problem : their begins and ends in the current state of things.
 	/// @param hist1 The coordinates of the first distribution along the random direction chosen.
 	/// @param hist2 The coordinates of the second distribution along the random direction chosen.
@@ -375,9 +384,14 @@ public:
 
 	/// @brief Decomposes a problem into subproblems in (quasi) linear time.
 	/// @tparam T The data type of the histograms to decompose into problems.
+	/// @param p The original problem bounds, after reduce_range().
+	/// @param hist1 The first distribution.
+	/// @param hist2 The second distribution.
+	/// @param assNN The updated nearest-neighbor assignment. Is not modified.
+	/// @param newp The new bounds for the sub-problems to solve.
 	/// @returns True if the problem was split, false if it wasn't worth it.
 	template<typename T>
-	bool linear_time_decomposition(const params &p, const T* hist1, const T* hist2, int* assNN, std::vector<params>& newp) {
+	bool linear_time_decomposition(const params &p, const T* hist1, const T* hist2, const int* assNN, std::vector<params>& newp) {
 
 		if (p.end0 - p.start0 < 20) { // not worth splitting already tiny problems
 			return false;
@@ -443,7 +457,7 @@ public:
 			int maxival = taken[assOffset];
 
 			if (taken[assOffset] >= 0) {
-				params curp;
+				params curp{};
 				if (next_free[assOffset] == assOffset) {
 					curp.start1 = p.start1 + assOffset;
 					curp.start0 = lastStart;
@@ -474,6 +488,13 @@ public:
 		return true;
 	}
 
+	/// @brief Solve the assignment problem for the current set of data.
+	/// @tparam T The data type of the samples to match
+	/// @param hist1 The first distribution along the current direction.
+	/// @param hist2 The second distribution along the current direction.
+	/// @param assignment The injective assignment currently computed.
+	/// @param assNN The original Nearest Neighbor Assignment of the current sub-problem.
+	/// @param value The sliced Wasserstein distance ???
 	template<typename T>
 	void simple_solve(const params &p, const T* hist1, const T* hist2, int* assignment, int* assNN, T &value) {
 
@@ -618,7 +639,7 @@ public:
 	}
 
 	/// @brief Performs the 1D Sliced Partial Optimal Transport.
-	/// @returns
+	/// @returns The cost of the current assignment ???
 	template<typename T>
 	T transport1d(const T *hist1, const T* hist2, int M0, int N0, std::vector<int> &assignment, double* timingSplits = nullptr) {
 		assignment.resize(M0);
@@ -659,27 +680,33 @@ public:
 			todo.push_back(initp);
 		}
 
+		// For all sub-problems which couldn't be matched above, solve them :
 	#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < todo.size(); i++) {
 
 			params p = todo[i];
 
 			nearest_neighbor_match(hist1, hist2, p, assNN); // since the bounds of the problem have changed, the NN maps has changed as well
+			// Attempt to reduce the ranges of problems. If all the histogram is matched, skip to the next one !
 			int ret = handle_simple_cases(p, hist1, hist2, &assignment[0], &assNN[0], value);
 			if (ret == 1) continue;
 
+			// Compute the number of non-injective values for the current assignment map
 			int nbbij = 0;
+			// FIXME : This should be another index, or at least keep in mind the position of the todo list above !!!
 			for (int i = p.start0 + 1; i < p.end0; i++) {
 				if (assNN[i] == assNN[i - 1]) nbbij++;
 			}
 
+			// Attempt to reduce the ranges of problems. If all the histogram is matched, skip to the next one !
 			ret = reduce_range(hist1, hist2, assignment, p, value, &assNN[0], nbbij);
 			if (ret == 1) continue;
 
-
+			// Handle the 'simple' cases in the current version of the assignment. If all the histogram is matched, go to the next one !
 			ret = handle_simple_cases(p, hist1, hist2, &assignment[0], &assNN[0], value);
 			if (ret == 1) continue;
 
+			// Perform a final nearest-neighbor match, and solve the problem here !
 			nearest_neighbor_match(hist1, hist2, p, assNN); // since the bounds of the problem have changed, the NN maps has changed as well
 			simple_solve(p, hist1, hist2, &assignment[0], &assNN[0], value);
 		}
@@ -738,14 +765,11 @@ public:
 				dir[i] /= n;
 			}
 
-
-			// sort according to projection on direction
+			// Sort both clouds according to their projection on the current direction :
 			Projector<DIM, T> proj(dir);
-
 			for (int i = 0; i < cloud1.size(); i++) {
 				cloud1Idx[i] = std::make_pair(proj.proj(cloud1[i]), i);
 			}
-
 			for (int i = 0; i < cloud2.size(); i++) {
 				cloud2Idx[i] = std::make_pair(proj.proj(cloud2[i]), i);
 			}
@@ -754,7 +778,7 @@ public:
 			// WARNING : By default, std::pair<> sorts based on lexicographical order : compare the first element, then the second.
 			std::thread mythread( [&]{std::sort(cloud1Idx.begin(), cloud1Idx.end()); } );
 			std::sort(cloud2Idx.begin(), cloud2Idx.end());
-                        mythread.join();
+            mythread.join();
                         
 			for (int i = 0; i < cloud1.size(); i++) {
 				projHist1[i] = cloud1Idx[i].first;

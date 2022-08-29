@@ -18,7 +18,6 @@
 namespace glm {
 
 	/// @brief Template overload to make epsilonEqual accept glm::mat3 comparisons.
-	template <>
 	bool epsilonEqual(glm::mat3 const& a, glm::mat3 const& b, glm::mat3 const& epsilon) {
 		glm::bvec3 row0 = lessThan(abs(a[0] - b[0]), epsilon[0]);
 		glm::bvec3 row1 = lessThan(abs(a[1] - b[1]), epsilon[1]);

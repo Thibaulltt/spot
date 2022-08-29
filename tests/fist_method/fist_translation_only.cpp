@@ -38,5 +38,7 @@ int main() {
 	// Check equality :
 	glm::bvec3 near_epsilon = glm::epsilonEqual(random_translation, glm_trans, 1e-6f);
 
-	return glm::all(near_epsilon);
+	std::cout << "Equality ? " << near_epsilon << '\n';
+
+	return glm::all(near_epsilon) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
