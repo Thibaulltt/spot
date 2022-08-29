@@ -32,14 +32,12 @@ ENDIF()
 # Enable the compilation flags :
 ADD_COMPILE_OPTIONS(${SPOT_COMPILE_FLAGS})
 
-ADD_SUBDIRECTORY(tests)
-
 ADD_LIBRARY(glm_bridge INTERFACE
 	glm_bridge.hpp
 )
-TARGET_LINK_LIBRARIES(glm_bridge
-	INTERFACE glm
-)
+TARGET_LINK_LIBRARIES(glm_bridge INTERFACE glm)
+
+ADD_SUBDIRECTORY(tests)
 
 # Add the executables :
 ADD_EXECUTABLE(FIST

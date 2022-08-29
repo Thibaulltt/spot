@@ -38,6 +38,7 @@ namespace micro_benchmarks {
 		coarse_duration_t mean, min, max, variance, std_dev;
 		duration_t quartile_1, median, quartile_3;
 		duration_t percentile_90, percentile_95, percentile_99;
+		coarse_duration_t total_running_time;
 	};
 
 	class TimingsLogger {

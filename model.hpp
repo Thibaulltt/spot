@@ -29,23 +29,23 @@ void print_aiScene_contents(const aiScene* scene);
 /// @brief Simple model class, holds positions and triangles of an OFF file.
 struct Model {
 	Model();
-	Model(const std::vector<glm::vec3>& vertices, const std::vector<glm::uvec3> triangles);
+	Model(const std::vector<glm::vec3>& vertices, std::vector<glm::uvec3> triangles);
 	Model(const Model& _other);
 	// Don't allow non-const copy-ctor.
 	explicit Model(Model&& _other) = delete;
 	~Model() = default;
 
 	/// @brief Applies a matrix transform to the positions.
-	void apply_transform(const glm::mat3);
+	void apply_transform(glm::mat3);
 	/// @brief Applies a translation to all positions.
-	void apply_translation(const glm::vec3);
+	void apply_translation(glm::vec3);
 
 	std::vector<Point<3, float>> positions;
 	std::vector<glm::uvec3> triangles;
 };
 
-/// @brief Load a given OFF file.
-/// @returns True if the file was loaded, false if not.
+/// @brief Load a given OFF file and returns its contents already converted to a std::vector<Point>.
+/// @returns A model with the file contents. If the file could not be loaded, returns an empty model.
 Model load_off_file(const std::string& path);
 
 #include "model.impl.hpp"
