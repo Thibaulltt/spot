@@ -69,9 +69,14 @@ float sumCosts(const float* h1, int start1, const float* h2, int start2, int n);
 void * malloc_simd(const size_t size, const size_t alignment);
 void free_simd(void* mem);
 
+/// @brief The params structure represents start and end indices to compute sub-solutions of 1D optimal transport.
 struct params {
 	params() = default;
 	/// @brief Fully-specified ctor, where the start and end of contiguous pairings in both distributions are given.
+	/// @param d0 The start of a series in the source distribution.
+	/// @param f0 The end of a series in the source distribution.
+	/// @param d1 The start of a series in the target distribution.
+	/// @param f1 The end of a series in the target distribution.
 	params(int d0, int f0, int d1, int f1, int d) : start0(d0), end0(f0), start1(d1), end1(f1) {};
 
 	int start0; ///< Start of a series of contiguous pairings, in the source distribution.
@@ -162,8 +167,9 @@ public:
 	/// @tparam T The sample type of the internal samples for both distributions.
 	/// @param hist1 The first histogram, the source ('X' in the paper).
 	/// @param hist2 The second histogram, the target ('Y' in the paper).
-	/// @param inparam The start/end bounds for both assignment problems.
 	/// @param assignment The injective assignment map ('a' in the paper).
+	/// @param inparam The start/end bounds for both assignment problems.
+	/// @param emd The sliced Earth Mover's distance.
 	/// @param assNN The original nearest-neighbor assignment map. Remains unchanged.
 	/// @param nbbij The number of non-injective values in the original nearest-neighbor assignment.
 	/// @returns 1 if hist1 entirely consumed ; 0 otherwise
@@ -490,11 +496,12 @@ public:
 
 	/// @brief Solve the assignment problem for the current set of data.
 	/// @tparam T The data type of the samples to match
+	/// @param p Teh start/end fields of the assignment problem to solve.
 	/// @param hist1 The first distribution along the current direction.
 	/// @param hist2 The second distribution along the current direction.
 	/// @param assignment The injective assignment currently computed.
 	/// @param assNN The original Nearest Neighbor Assignment of the current sub-problem.
-	/// @param value The sliced Wasserstein distance ???
+	/// @param value The sliced Earth Mover's Distance.
 	template<typename T>
 	void simple_solve(const params &p, const T* hist1, const T* hist2, int* assignment, int* assNN, T &value) {
 
@@ -639,45 +646,51 @@ public:
 	}
 
 	/// @brief Performs the 1D Sliced Partial Optimal Transport.
-	/// @returns The cost of the current assignment ???
+	/// @param hist1 The source distribution, projected along a random direction.
+	/// @param hist2 The target distribution, projected along the same random direction.
+	/// @param M0 The size of the source distribution, in number of samples.
+	/// @param N0 The size of the target distribution, in number of samples.
+	/// @param assignment The computed assignment for this particular slice of the optimal transport plan.
+	/// @param timingSplits Unused. Leftover from earlier (benchmarked?) code maybe ?
+	/// @returns The sliced EMD distance along that axis.
 	template<typename T>
 	T transport1d(const T *hist1, const T* hist2, int M0, int N0, std::vector<int> &assignment, double* timingSplits = nullptr) {
 		assignment.resize(M0);
-		params initp(0, M0, 0, N0, 0);
-		T value = 0;
+		params initial_parameters(0, M0, 0, N0, 0);
+		T sliced_earth_mover_distance = 0;
 
 		// starts computing nearest neighbor match
-		std::vector<int> assNN(M0);
-		nearest_neighbor_match(hist1, hist2, initp, assNN);
+		std::vector<int> nearest_neighbor_assignment(M0);
+		nearest_neighbor_match(hist1, hist2, initial_parameters, nearest_neighbor_assignment);
 
-		// computes the number of non-injective matches in an interval
-		int nbbij = 0;
-		for (int i = initp.start0 + 1; i < initp.end0; i++) {
-			if (assNN[i] == assNN[i - 1]) nbbij++;
+		// Check the number of non-injective matches in all intervals :
+		int non_injective_matches = 0;
+		for (int i = initial_parameters.start0 + 1; i < initial_parameters.end0; i++) {
+			if (nearest_neighbor_assignment[i] == nearest_neighbor_assignment[i - 1]) non_injective_matches++;
 		}
 
-		int ret1 = reduce_range(hist1, hist2, assignment, initp, value, &assNN[0], nbbij);
-		if (ret1 == 1) return value;
+		int ret1 = reduce_range(hist1, hist2, assignment, initial_parameters, sliced_earth_mover_distance, &nearest_neighbor_assignment[0], non_injective_matches);
+		if (ret1 == 1) return sliced_earth_mover_distance;
 
-		nearest_neighbor_match(hist1, hist2, initp, assNN); // since the bounds of the problem have changed, the NN maps has changed as well
+		nearest_neighbor_match(hist1, hist2, initial_parameters, nearest_neighbor_assignment); // since the bounds of the problem have changed, the NN maps has changed as well
 		std::vector<params> splits;
 
-		bool res = linear_time_decomposition(initp, hist1, hist2, &assNN[0], splits);
+		bool res = linear_time_decomposition(initial_parameters, hist1, hist2, &nearest_neighbor_assignment[0], splits);
 
 		std::vector<params> todo;
 		if (res) {
 			todo.reserve(splits.size());
 			for (int i = 0; i < splits.size(); i++) {
 				if (splits[i].end0 == splits[i].start0 + 1) { // we directly handle problems of size 1 here
-					assignment[splits[i].start0] = assNN[splits[i].start0];
-					value += cost(hist1[splits[i].start0], hist2[assNN[splits[i].start0]]);
+					assignment[splits[i].start0] = nearest_neighbor_assignment[splits[i].start0];
+					sliced_earth_mover_distance += cost(hist1[splits[i].start0], hist2[nearest_neighbor_assignment[splits[i].start0]]);
 				}
 				else
 					todo.push_back(splits[i]);
 			}
 		}
 		else {
-			todo.push_back(initp);
+			todo.push_back(initial_parameters);
 		}
 
 		// For all sub-problems which couldn't be matched above, solve them :
@@ -686,33 +699,33 @@ public:
 
 			params p = todo[i];
 
-			nearest_neighbor_match(hist1, hist2, p, assNN); // since the bounds of the problem have changed, the NN maps has changed as well
+			nearest_neighbor_match(hist1, hist2, p, nearest_neighbor_assignment); // since the bounds of the problem have changed, the NN maps has changed as well
 			// Attempt to reduce the ranges of problems. If all the histogram is matched, skip to the next one !
-			int ret = handle_simple_cases(p, hist1, hist2, &assignment[0], &assNN[0], value);
+			int ret = handle_simple_cases(p, hist1, hist2, &assignment[0], &nearest_neighbor_assignment[0], sliced_earth_mover_distance);
 			if (ret == 1) continue;
 
 			// Compute the number of non-injective values for the current assignment map
 			int nbbij = 0;
 			// FIXME : This should be another index, or at least keep in mind the position of the todo list above !!!
 			for (int i = p.start0 + 1; i < p.end0; i++) {
-				if (assNN[i] == assNN[i - 1]) nbbij++;
+				if (nearest_neighbor_assignment[i] == nearest_neighbor_assignment[i - 1]) nbbij++;
 			}
 
 			// Attempt to reduce the ranges of problems. If all the histogram is matched, skip to the next one !
-			ret = reduce_range(hist1, hist2, assignment, p, value, &assNN[0], nbbij);
+			ret = reduce_range(hist1, hist2, assignment, p, sliced_earth_mover_distance, &nearest_neighbor_assignment[0], nbbij);
 			if (ret == 1) continue;
 
 			// Handle the 'simple' cases in the current version of the assignment. If all the histogram is matched, go to the next one !
-			ret = handle_simple_cases(p, hist1, hist2, &assignment[0], &assNN[0], value);
+			ret = handle_simple_cases(p, hist1, hist2, &assignment[0], &nearest_neighbor_assignment[0], sliced_earth_mover_distance);
 			if (ret == 1) continue;
 
 			// Perform a final nearest-neighbor match, and solve the problem here !
-			nearest_neighbor_match(hist1, hist2, p, assNN); // since the bounds of the problem have changed, the NN maps has changed as well
-			simple_solve(p, hist1, hist2, &assignment[0], &assNN[0], value);
+			nearest_neighbor_match(hist1, hist2, p, nearest_neighbor_assignment); // since the bounds of the problem have changed, the NN maps has changed as well
+			simple_solve(p, hist1, hist2, &assignment[0], &nearest_neighbor_assignment[0], sliced_earth_mover_distance);
 		}
 
 
-		return value;
+		return sliced_earth_mover_distance;
 	}
 
 	/// @brief Puts into correspondance two distributions by 1D-sliced-optimal-transport.
@@ -722,7 +735,7 @@ public:
 	/// @tparam T The data type of the distributions' samples.
 	/// @param cloud1 The first distribution, to register to cloud2.
 	/// @param cloud2 The second distribution, which cloud1 will be matched to.
-	/// @param niter The number of iterations/1D-slices to perform for this matching/gradient descent.
+	/// @param niter The number of 1D slices to use for this matching/gradient descent.
 	/// @param advect If true, matches the distributions together. If false, computes barycenters or sliced EMD.
 	/// @returns The sliced Wasserstein distance. If the point clouds are modified, they are done in-place directly in the variables passed to the function.
 	template<int DIM, typename T>
@@ -939,8 +952,8 @@ public:
 	/// @param nslices The number of 1D-slices to perform when computing the correspondances at each iteration.
 	/// @param pointsSrc The original point cloud, the one to register ('X' in the paper).
 	/// @param pointsDst The target point cloud, the one to register against ('Y' in the paper).
-	/// @param rot The rotation matrix extracted from the FIST algorithm.
-	/// @param trans The translation vector extracted from the FIST algorithm.
+	/// @param transformation_rotation The rotation matrix extracted from the FIST algorithm.
+	/// @param transformation_translation The translation vector extracted from the FIST algorithm.
 	/// @param useScaling If true, will extract a similarity transform (isotropic scaling). Otherwise, will extract a rigid transform.
 	/// @param scaling The scaling factor extracted from this algorithm, if useScaling was set to true.
 	/// @param print_final_timings Enables or disables the printing of some iteration time statistics. False if undefined.
@@ -950,21 +963,21 @@ public:
 			int nslices,
 			std::vector<Point<DIM, T> > &pointsSrc,
 			const std::vector<Point<DIM, T> > &pointsDst,
-			std::vector<double> &rot,
-			std::vector<double> &trans,
+			std::vector<double> &transformation_rotation,
+			std::vector<double> &transformation_translation,
 			bool useScaling,
 			double &scaling,
 			bool print_final_timings = false
 	) {
 		using default_image_t = image_t<double>;
 
-		rot.resize(DIM*DIM);
-		trans.resize(DIM);
+		transformation_rotation.resize(DIM * DIM);
+		transformation_translation.resize(DIM);
 		scaling = 1;
-		std::fill(rot.begin(), rot.end(), 0);
+		std::fill(transformation_rotation.begin(), transformation_rotation.end(), 0);
 		for (int i = 0; i < DIM; i++)
-			rot[i*DIM + i] = 1;
-		std::fill(trans.begin(), trans.end(), 0);
+			transformation_rotation[i * DIM + i] = 1;
+		std::fill(transformation_translation.begin(), transformation_translation.end(), 0);
 
 		std::shared_ptr<micro_benchmarks::TimingsLogger> time_logger = std::make_shared<micro_benchmarks::TimingsLogger>(niters);
 
@@ -1028,13 +1041,14 @@ public:
 
 			rotM = U * diag*V.get_transpose();
 
-			default_image_t rotG(const_cast<double*>(&rot[0]), DIM, DIM, 1, 1, true);
-			default_image_t transG(const_cast<double*>(&trans[0]), 1, DIM, 1, 1, true);
+			default_image_t rotG(const_cast<double*>(&transformation_rotation[0]), DIM, DIM, 1, 1, true);
+			default_image_t transG(const_cast<double*>(&transformation_translation[0]), 1, DIM, 1, 1, true);
 			default_image_t C1(&center1[0], 1, DIM);
 			default_image_t C2(&center2[0], 1, DIM);
 			rotG = rotM*rotG;
 			transG = transG + C2 - C1;
 
+			// Apply the computed transformation
 			for (int i = 0; i < pointsSrc.size(); i++) {
 				image_t<T> P(const_cast<T*>(&pointsSrc[i][0]), 1,DIM,1,1,true);
 				P = scal*(rotM * (P - C1)) + C2;
@@ -1043,8 +1057,8 @@ public:
 			time_logger->stop_lap();
 		}
 
-		default_image_t rotG(const_cast<double*>(&rot[0]), DIM, DIM, 1, 1, true);
-		default_image_t transG(const_cast<double*>(&trans[0]), 1, DIM, 1, 1, true);
+		default_image_t rotG(const_cast<double*>(&transformation_rotation[0]), DIM, DIM, 1, 1, true);
+		default_image_t transG(const_cast<double*>(&transformation_translation[0]), 1, DIM, 1, 1, true);
 		if (useScaling)
 			transG = scaling*rotG * transG;
 		else
