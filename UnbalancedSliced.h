@@ -735,8 +735,8 @@ public:
 	/// @tparam T The data type of the distributions' samples.
 	/// @param cloud1 The first distribution, to register to cloud2.
 	/// @param cloud2 The second distribution, which cloud1 will be matched to.
-	/// @param niter The number of 1D slices to use for this matching/gradient descent.
-	/// @param advect If true, matches the distributions together. If false, computes barycenters or sliced EMD.
+	/// @param niter The number of iterations/1D-slices to perform for this matching/gradient descent.
+	/// @param advect If true, matches the distributions together. If false, computes barycenters or sliced Earth Mover's Distance (EMD).
 	/// @returns The sliced Wasserstein distance. If the point clouds are modified, they are done in-place directly in the variables passed to the function.
 	template<int DIM, typename T>
 	double correspondencesNd(std::vector<Point<DIM, T> > &cloud1, const std::vector<Point<DIM, T> > &cloud2, int niter, bool advect = false) {

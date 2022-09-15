@@ -8,6 +8,7 @@ PROJECT(spot
 # Only use C++11, and export compile commands :
 SET(CMAKE_CXX_STANDARD 11)
 
+
 MESSAGE(STATUS "This can only compile on macOS or Linux.")
 MESSAGE(STATUS "Use the Visual Studio pre-packaged solutions otherwise.")
 
@@ -44,6 +45,7 @@ ADD_EXECUTABLE(FIST
 	mainFIST.cpp
 	UnbalancedSliced.cpp
 	micro_benchmark.cpp
+	program_options.cpp
 )
 TARGET_LINK_LIBRARIES(FIST
 	PUBLIC OpenMP::OpenMP_CXX
