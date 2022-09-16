@@ -6,7 +6,7 @@ PROJECT(spot
 )
 
 # Only use C++11, and export compile commands :
-SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD 14)
 
 
 MESSAGE(STATUS "This can only compile on macOS or Linux.")
@@ -21,6 +21,8 @@ FIND_PACKAGE(OpenMP REQUIRED)
 FIND_PACKAGE(fmt REQUIRED)
 FIND_PACKAGE(assimp REQUIRED)
 FIND_PACKAGE(glm REQUIRED)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options)
+FIND_PACKAGE(pybind11 REQUIRED)
 
 # Compile the executables with the same compile flags as the Makefile.
 # Only difference : no optimization flags (determined by CMAKE_BUILD_TYPE).
@@ -52,6 +54,7 @@ TARGET_LINK_LIBRARIES(FIST
 	PUBLIC fmt::fmt
 	PUBLIC assimp::assimp
 	PUBLIC glm_bridge
+	PUBLIC Boost::program_options
 )
 ADD_EXECUTABLE(colorTransfer
 	mainColorTransfer.cpp
@@ -61,4 +64,13 @@ ADD_EXECUTABLE(colorTransfer
 TARGET_LINK_LIBRARIES(colorTransfer
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
+)
+
+pybind11_add_module(spot spot_wrappers.hpp spot_wrappers.cpp micro_benchmark.cpp UnbalancedSliced.cpp)
+TARGET_LINK_LIBRARIES(spot
+	PUBLIC OpenMP::OpenMP_CXX
+	PUBLIC fmt::fmt
+	PUBLIC assimp::assimp
+	PUBLIC glm_bridge
+	PUBLIC Boost::program_options
 )

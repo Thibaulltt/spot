@@ -45,4 +45,8 @@ namespace program_options {
 		}
 	}
 
+	constexpr void FIST_options::help_message() {
+		fmt::print("<Help message unavailable for now>\n");
+	}
+
 }

@@ -1,0 +1,154 @@
+#include "./spot_wrappers.hpp"
+#include "glm_bridge.hpp"
+
+#include <pybind11/attr.h>
+
+namespace spot_wrappers {
+
+	void set_enable_reproducible_runs(bool _enable) {
+		enable_reproducible_runs = _enable;
+		initialize_random_engines();
+	}
+
+	void initialize_random_engines() {
+		if (enable_reproducible_runs) {
+			engine = std::default_random_engine(10);
+		} else {
+			/* Init with current time : */
+			auto current_time = std::chrono::high_resolution_clock::now();
+			engine = std::default_random_engine(current_time.time_since_epoch().count());
+		}
+	}
+
+	SPOT_BaseWrapper::SPOT_BaseWrapper() {
+		this->timings = nullptr;
+	}
+
+	SPOT_BaseWrapper::~SPOT_BaseWrapper() {
+		this->timings.reset();
+	}
+
+	double SPOT_BaseWrapper::get_total_running_time() const {
+		if (this->timings) {
+			auto times = this->timings->get_iteration_times();
+			return std::accumulate(times.cbegin(), times.cend(), 0.0,
+				[&](double before, const micro_benchmarks::duration_t& duration) {
+					// Convert to a duration type with double (fp64) precision, and add its count to the current sum :
+					return before + std::chrono::duration_cast<micro_benchmarks::fine_duration_t>(duration).count();
+				}
+			);
+		} else return 0.0;
+	}
+
+	double SPOT_BaseWrapper::get_running_time(std::uint32_t lap_number) const {
+		if (this->timings) {
+			if (lap_number >= this->timings->get_iteration_times().size()) {
+				return 0.0;
+			} else {
+				return std::chrono::duration_cast<micro_benchmarks::fine_duration_t>(this->timings->get_iteration_times()[lap_number]).count();
+			}
+		} else return 0.0;
+	}
+
+	void SPOT_BaseWrapper::print_timings(const char* message, const char* prefix) const {
+		if (this->timings) {
+			this->timings->print_timings(message, prefix);
+		} else {
+			std::cerr << "<Error : no timings recorded>\n";
+		}
+	}
+
+	FISTWrapperRandomModels::FISTWrapperRandomModels(std::uint32_t src_distrib_size, std::uint32_t tgt_distrib_size, double radius)
+		: src_size(src_distrib_size), tgt_size(tgt_distrib_size), point_cloud_radius(radius),
+		computed_transform(glm::identity<glm::mat4>()), computed_translation(glm::vec4{}), computed_scaling(1.0),
+		source_distribution(src_distrib_size), target_distribution(tgt_distrib_size), SPOT_BaseWrapper()
+	{
+		// Generate random point clouds :
+		for (std::size_t i = 0; i < this->src_size; ++i) {
+			this->source_distribution[i][0] = uniform(engine) * this->point_cloud_radius;
+			this->source_distribution[i][1] = uniform(engine) * this->point_cloud_radius;
+			this->source_distribution[i][2] = uniform(engine) * this->point_cloud_radius;
+		}
+		for (std::size_t i = 0; i < this->tgt_size; ++i) {
+			this->target_distribution[i][0] = uniform(engine) * this->point_cloud_radius;
+			this->target_distribution[i][1] = uniform(engine) * this->point_cloud_radius;
+			this->target_distribution[i][2] = uniform(engine) * this->point_cloud_radius;
+		}
+	}
+
+	FISTWrapperRandomModels::~FISTWrapperRandomModels() = default;
+
+	void FISTWrapperRandomModels::compute_transformation(bool enable_timings) {
+		UnbalancedSliced sliced;
+		std::vector<double> rot(9);
+		std::vector<double> trans(3);
+		double scaling;
+		if (enable_timings) {
+			this->timings = std::make_unique<micro_benchmarks::TimingsLogger>(this->maximum_iterations);
+		}
+		sliced.fast_iterative_sliced_transport(
+			static_cast<unsigned int>(this->maximum_iterations),
+			static_cast<unsigned int>(this->maximum_directions),
+			this->source_distribution, this->target_distribution,
+			rot, trans, true, scaling, std::move(this->timings)
+		);
+		this->computed_transform = glm::mat4{
+			rot[0], rot[1], rot[2], 0.0f,
+			rot[3], rot[4], rot[5], 0.0f,
+			rot[6], rot[7], rot[8], 0.0f,
+			0.0f,   0.0f,   0.0f,   1.0f
+		};
+		this->computed_translation = glm::vec4(trans[0], trans[1], trans[2], 0.0f);
+		this->computed_scaling = scaling;
+	}
+
+	point_tensor_t FISTWrapperRandomModels::get_source_point_cloud_py() const {
+		//
+	}
+
+	point_tensor_t FISTWrapperRandomModels::get_target_point_cloud_py() const {
+		//
+	}
+
+	glm::mat4 FISTWrapperRandomModels::get_transform_matrix() const {
+		return this->computed_transform;
+	}
+
+	glm::vec4 FISTWrapperRandomModels::get_transform_translation() const {
+		return this->computed_translation;
+	}
+
+	double FISTWrapperRandomModels::get_transform_scaling() const {
+		return this->computed_scaling;
+	}
+
+}
+
+PYBIND11_MODULE(spot, spot_module) {
+	// Those argument literals are __really__ useful ...
+	using namespace pybind11::literals;
+
+	spot_module.doc() = "A set of wrappers around the SPOT method : from Sliced Partial Optimal Transport by Bonneel and Coeurjolly (2019)";
+
+	// Declare used GLM types :
+	define_glm_type_matrix(glm::mat4{}, "glm_mat4", spot_module);
+	define_glm_type_matrix(glm::mat3{}, "glm_mat3", spot_module);
+	define_glm_type_vector(glm::vec4{}, "glm_vec4", spot_module);
+	define_glm_type_vector(glm::vec3{}, "glm_vec3", spot_module);
+
+	spot_module.def("enable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(true); });
+	spot_module.def("disable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(false); });
+
+	pybind11::class_<spot_wrappers::FISTWrapperRandomModels>(spot_module, "FISTRandomPointClouds")
+		.def(pybind11::init<std::uint32_t, std::uint32_t, double>())
+		.def("matrix", &spot_wrappers::FISTWrapperRandomModels::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
+		.def("translation", &spot_wrappers::FISTWrapperRandomModels::get_transform_translation)
+		.def("scaling", &spot_wrappers::FISTWrapperRandomModels::get_transform_scaling)
+		.def("lap_time", &spot_wrappers::FISTWrapperRandomModels::get_running_time, "lap_number"_a)
+		.def("compute_transformation", &spot_wrappers::FISTWrapperRandomModels::compute_transformation, "enable_timings"_a = false)
+		.def("print_timings", &spot_wrappers::FISTWrapperRandomModels::print_timings, "message"_a = "", "prefix"_a = "")
+		.def_property_readonly("source_distribution", &spot_wrappers::FISTWrapperRandomModels::get_source_point_cloud_py)
+		.def_property_readonly("target_distribution", &spot_wrappers::FISTWrapperRandomModels::get_target_point_cloud_py)
+		.def_property_readonly("running_time", &spot_wrappers::FISTWrapperRandomModels::get_total_running_time)
+	    .doc() = "Generates random point clouds and registers them.";
+}

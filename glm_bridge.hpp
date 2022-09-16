@@ -9,11 +9,12 @@
  *=============================================
  */
 
-#include <glm/glm.hpp>         /* General-purpose header for GLM : includes all GLSL symbols.     */
-#include <glm/gtx/io.hpp>      /* Provides operator<< and operator>> functions for `std::fstream` */
-#include <glm/gtc/epsilon.hpp> /* Provides glm::epsilon[Not]Equal(), equality with epsilon checks */
-#include <glm/gtc/random.hpp>  /* Randoms : linear, circular, spherical, disk, ball, and Gaussian */
-#include <glm/ext/scalar_constants.hpp>
+#include <glm/glm.hpp>					/* General-purpose header for GLM : includes all GLSL symbols.     */
+#include <glm/gtx/io.hpp>				/* Provides operator<< and operator>> functions for `std::fstream` */
+#include <glm/gtc/epsilon.hpp>			/* Provides glm::epsilon[Not]Equal(), equality with epsilon checks */
+#include <glm/gtc/random.hpp>			/* Randoms : linear, circular, spherical, disk, ball, and Gaussian */
+#include <glm/ext/scalar_constants.hpp>	/* Provides some scalar constants such as PI. */
+#include <glm/ext/matrix_transform.hpp>	/* Contains mat<>::identity ! */
 
 namespace glm {
 

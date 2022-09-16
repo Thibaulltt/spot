@@ -14,16 +14,38 @@
 
 namespace program_options {
 
-	/// @brief Prints a help message to the screen.
-	constexpr void help_message();
+	/// @brief This class implements a baseline argument parser.
+	/// @details It only defines two flags for help ("help" and "h"). The other programs must subclass this and add
+	/// their own arguments.
+	class base_program_options {
+	public:
+		base_program_options(int argc, char* argv[]);
+		~base_program_options() = default;
+
+		/// @brief Checks if the given options are passed to the program by the user (single arguments).
+		bool has_argument(std::string single_option) const;
+		/// @brief Checks if the given argument is passed to the program by the user (short and long arguments).
+		bool has_argument(std::string long_option, std::string short_option) const;
+
+	protected:
+		/// @brief Simple typedef to ``boost::program_options::options_description``.
+		using options_description = boost::program_options::options_description;
+		/// @brief Simple typedef to ``boost::program_options::variable_map``.
+		using variable_map = boost::program_options::variables_map;
+
+	protected:
+		std::unique_ptr<options_description> options; ///< The options' descriptions and (optionally) default values.
+		std::unique_ptr<variable_map> cmdline_map;    ///< The map containing arguments passed to the program.
+	};
 
 	struct FIST_options {
+
+		/// @brief Prints a help message about the program.
+		static void help_message();
+
 	public:
 		FIST_options(int argc, char* argv[]);
 		~FIST_options() = default;
-
-		/// @brief Prints a help message about the program.
-		void help_message() const;
 
 		/// @brief Prints the current status of the structure.
 		void print_current_status();

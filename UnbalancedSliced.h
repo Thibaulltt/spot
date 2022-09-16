@@ -956,7 +956,7 @@ public:
 	/// @param transformation_translation The translation vector extracted from the FIST algorithm.
 	/// @param useScaling If true, will extract a similarity transform (isotropic scaling). Otherwise, will extract a rigid transform.
 	/// @param scaling The scaling factor extracted from this algorithm, if useScaling was set to true.
-	/// @param print_final_timings Enables or disables the printing of some iteration time statistics. False if undefined.
+	/// @param time_logger If a non-null pointer is passed, will record the iteration times for this run of the FIST algorithm.
 	template<int DIM, typename T>
 	void fast_iterative_sliced_transport(
 			int niters,
@@ -967,7 +967,7 @@ public:
 			std::vector<double> &transformation_translation,
 			bool useScaling,
 			double &scaling,
-			bool print_final_timings = false
+			std::unique_ptr<micro_benchmarks::TimingsLogger> time_logger = nullptr
 	) {
 		using default_image_t = image_t<double>;
 
@@ -979,10 +979,8 @@ public:
 			transformation_rotation[i * DIM + i] = 1;
 		std::fill(transformation_translation.begin(), transformation_translation.end(), 0);
 
-		std::shared_ptr<micro_benchmarks::TimingsLogger> time_logger = std::make_shared<micro_benchmarks::TimingsLogger>(niters);
-
 		for (int iter = 0; iter < niters; iter++) {
-			time_logger->start_lap();
+			if (time_logger) { time_logger->start_lap(); }
 
 			/* Compute the correspondances between the two points at this stage : */
 			std::vector<Point<DIM, T> > pointsSrcCopy(pointsSrc);
@@ -1054,7 +1052,7 @@ public:
 				P = scal*(rotM * (P - C1)) + C2;
 			}
 
-			time_logger->stop_lap();
+			if (time_logger) { time_logger->stop_lap(); }
 		}
 
 		default_image_t rotG(const_cast<double*>(&transformation_rotation[0]), DIM, DIM, 1, 1, true);
@@ -1064,9 +1062,8 @@ public:
 		else
 			transG = rotG * transG;
 
-		if (print_final_timings) {
+		if (time_logger) {
 			time_logger->compute_timing_stats();
-			time_logger->print_timings("", "[Time statistics]");
 		}
 	}
 
