@@ -22,6 +22,8 @@ namespace spot_wrappers {
 
 	SPOT_BaseWrapper::SPOT_BaseWrapper() {
 		this->timings = nullptr;
+		this->maximum_iterations = 200;
+		this->maximum_directions = 100;
 	}
 
 	SPOT_BaseWrapper::~SPOT_BaseWrapper() {
@@ -58,6 +60,14 @@ namespace spot_wrappers {
 		}
 	}
 
+	void SPOT_BaseWrapper::set_maximum_iterations(const std::uint32_t new_iterations_max) {
+		this->maximum_iterations = new_iterations_max;
+	}
+
+	void SPOT_BaseWrapper::set_maximum_directions(const std::uint32_t new_directions_max) {
+		this->maximum_directions = new_directions_max;
+	}
+
 	FISTWrapperRandomModels::FISTWrapperRandomModels(std::uint32_t src_distrib_size, std::uint32_t tgt_distrib_size, double radius)
 		: src_size(src_distrib_size), tgt_size(tgt_distrib_size), point_cloud_radius(radius),
 		computed_transform(glm::identity<glm::mat4>()), computed_translation(glm::vec4{}), computed_scaling(1.0),
@@ -87,8 +97,8 @@ namespace spot_wrappers {
 			this->timings = std::make_unique<micro_benchmarks::TimingsLogger>(this->maximum_iterations);
 		}
 		sliced.fast_iterative_sliced_transport(
-			static_cast<unsigned int>(this->maximum_iterations),
-			static_cast<unsigned int>(this->maximum_directions),
+			static_cast<int>(this->maximum_iterations),
+			static_cast<int>(this->maximum_directions),
 			this->source_distribution, this->target_distribution,
 			rot, trans, true, scaling, std::move(this->timings)
 		);
@@ -100,14 +110,21 @@ namespace spot_wrappers {
 		};
 		this->computed_translation = glm::vec4(trans[0], trans[1], trans[2], 0.0f);
 		this->computed_scaling = scaling;
+		fmt::print("Registration done.");
+		if (enable_timings) {
+			this->timings->compute_timing_stats();
+			this->timings->print_timings(
+				fmt::format("After registering {} to {} points, transformation is :", this->src_size, this->tgt_size),
+				"[Final transformation :]");
+		}
 	}
 
 	point_tensor_t FISTWrapperRandomModels::get_source_point_cloud_py() const {
-		//
+		return pybind11::array_t<Point<3, double>, pybind11::array::c_style | pybind11::array::forcecast>(this->src_size, this->source_distribution.data());
 	}
 
 	point_tensor_t FISTWrapperRandomModels::get_target_point_cloud_py() const {
-		//
+		return pybind11::array_t<Point<3, double>, pybind11::array::c_style | pybind11::array::forcecast>(this->tgt_size, this->target_distribution.data());
 	}
 
 	glm::mat4 FISTWrapperRandomModels::get_transform_matrix() const {
@@ -122,6 +139,13 @@ namespace spot_wrappers {
 		return this->computed_scaling;
 	}
 
+	std::uint32_t FISTWrapperRandomModels::get_source_distribution_size() const {
+		return this->src_size;
+	}
+
+	std::uint32_t FISTWrapperRandomModels::get_target_distribution_size() const {
+		return this->tgt_size;
+	}
 }
 
 PYBIND11_MODULE(spot, spot_module) {
@@ -139,16 +163,34 @@ PYBIND11_MODULE(spot, spot_module) {
 	spot_module.def("enable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(true); });
 	spot_module.def("disable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(false); });
 
-	pybind11::class_<spot_wrappers::FISTWrapperRandomModels>(spot_module, "FISTRandomPointClouds")
-		.def(pybind11::init<std::uint32_t, std::uint32_t, double>())
-		.def("matrix", &spot_wrappers::FISTWrapperRandomModels::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
-		.def("translation", &spot_wrappers::FISTWrapperRandomModels::get_transform_translation)
-		.def("scaling", &spot_wrappers::FISTWrapperRandomModels::get_transform_scaling)
-		.def("lap_time", &spot_wrappers::FISTWrapperRandomModels::get_running_time, "lap_number"_a)
-		.def("compute_transformation", &spot_wrappers::FISTWrapperRandomModels::compute_transformation, "enable_timings"_a = false)
-		.def("print_timings", &spot_wrappers::FISTWrapperRandomModels::print_timings, "message"_a = "", "prefix"_a = "")
-		.def_property_readonly("source_distribution", &spot_wrappers::FISTWrapperRandomModels::get_source_point_cloud_py)
-		.def_property_readonly("target_distribution", &spot_wrappers::FISTWrapperRandomModels::get_target_point_cloud_py)
-		.def_property_readonly("running_time", &spot_wrappers::FISTWrapperRandomModels::get_total_running_time)
+	/// @brief simple typedef, to make the following lines easier to read :
+	using FISTRandom = spot_wrappers::FISTWrapperRandomModels;
+
+	// Bind the point struct :
+	pybind11::class_<Point<3, double>>(spot_module, "Point3d", pybind11::buffer_protocol())
+		.def_buffer([](Point<3,double>& point){
+			return pybind11::buffer_info( &point[0], 3 * sizeof(double),
+				pybind11::format_descriptor<double>::format(), 1, { 3 }, { sizeof(double) }
+			);
+		});
+
+	// Binds the FIST wrapper with random distributions and its member functions :
+	pybind11::class_<FISTRandom>(spot_module, "FISTRandomPointClouds")
+		.def(pybind11::init<const std::uint32_t, const std::uint32_t, const double>())
+		.def("matrix", &FISTRandom::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
+		.def("translation", &FISTRandom::get_transform_translation)
+		.def("scaling", &FISTRandom::get_transform_scaling)
+		.def("lap_time", &FISTRandom::get_running_time, "lap_number"_a)
+		.def("compute_transformation", &FISTRandom::compute_transformation, "enable_timings"_a = false)
+		.def("print_timings", &FISTRandom::print_timings, "message"_a = "", "prefix"_a = "")
+		.def("set_max_iterations", &FISTRandom::set_maximum_iterations, "max_iterations"_a = 200)
+		.def("set_max_directions", &FISTRandom::set_maximum_directions, "max_directions"_a = 100)
+		.def_property_readonly("source_distribution", &FISTRandom::get_source_point_cloud_py)
+		.def_property_readonly("target_distribution", &FISTRandom::get_target_point_cloud_py)
+		.def_property_readonly("running_time", &FISTRandom::get_total_running_time)
+		.def("__repr__", [](const FISTRandom& fist) {
+			return fmt::format("<interface to spot_wrappers::FISTWrapperRandomModels with {} and {} samples>",
+					fist.get_source_distribution_size(), fist.get_target_distribution_size());
+		})
 	    .doc() = "Generates random point clouds and registers them.";
 }

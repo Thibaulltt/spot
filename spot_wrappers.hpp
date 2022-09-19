@@ -21,7 +21,7 @@
 namespace spot_wrappers {
 
 	/// @brief Simple typedef to an array type containing the points' data.
-	using point_tensor_t = pybind11::array_t<double>;
+	using point_tensor_t = pybind11::array_t<Point<3, double>>;
 
 	/// @brief Controls whether the random engine used to generate random numbers is const-initialized or time-initialized.
 	bool enable_reproducible_runs = false;
@@ -65,8 +65,16 @@ namespace spot_wrappers {
 		/// @brief Prints the timings computed, if available.
 		void print_timings(const char* message, const char* prefix) const;
 
+		/// @brief Sets the new maximum number of iterations available for registrations.
+		void set_maximum_iterations(std::uint32_t new_iterations_max);
+		/// @brief Sets the new maximum number of directions evaluated at each iteration of the registration.
+		void set_maximum_directions(std::uint32_t new_directions_max);
+
 	protected:
 		std::unique_ptr<micro_benchmarks::TimingsLogger> timings; ///< The benchmark logger, to keep track of the execution times.
+
+		std::uint32_t maximum_iterations; ///< The maximum number of iterations available for registration steps.
+		std::uint32_t maximum_directions; ///< The maximum number of directions evaluated at each registration step.
 	};
 
 	class FISTWrapperRandomModels : public SPOT_BaseWrapper {
@@ -92,6 +100,11 @@ namespace spot_wrappers {
 		/// @brief Returns the computed scaling parameter if requested.
 		double get_transform_scaling() const;
 
+		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
+		std::uint32_t get_source_distribution_size() const;
+		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
+		std::uint32_t get_target_distribution_size() const;
+
 	protected:
 		glm::mat4 computed_transform;
 		glm::vec4 computed_translation;
@@ -104,8 +117,6 @@ namespace spot_wrappers {
 		std::vector<Point<3, double>> source_distribution; ///< The source point cloud.
 		std::vector<Point<3, double>> target_distribution; ///< The target point cloud.
 
-		std::uint32_t maximum_iterations;
-		std::uint32_t maximum_directions;
 	};
 
 }// namespace spot_wrappers
