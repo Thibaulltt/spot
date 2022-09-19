@@ -792,7 +792,7 @@ public:
 			std::thread mythread( [&]{std::sort(cloud1Idx.begin(), cloud1Idx.end()); } );
 			std::sort(cloud2Idx.begin(), cloud2Idx.end());
             mythread.join();
-                        
+
 			for (int i = 0; i < cloud1.size(); i++) {
 				projHist1[i] = cloud1Idx[i].first;
 			}
@@ -958,7 +958,7 @@ public:
 	/// @param scaling The scaling factor extracted from this algorithm, if useScaling was set to true.
 	/// @param time_logger If a non-null pointer is passed, will record the iteration times for this run of the FIST algorithm.
 	template<int DIM, typename T>
-	void fast_iterative_sliced_transport(
+	std::unique_ptr<micro_benchmarks::TimingsLogger> fast_iterative_sliced_transport(
 			int niters,
 			int nslices,
 			std::vector<Point<DIM, T> > &pointsSrc,
@@ -1053,6 +1053,8 @@ public:
 			}
 
 			if (time_logger) { time_logger->stop_lap(); }
+
+			return time_logger;
 		}
 
 		default_image_t rotG(const_cast<double*>(&transformation_rotation[0]), DIM, DIM, 1, 1, true);

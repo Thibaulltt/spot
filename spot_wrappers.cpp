@@ -20,6 +20,7 @@ namespace spot_wrappers {
 		}
 	}
 
+	//region --- Spot_BaseWrapper implementation ---
 	SPOT_BaseWrapper::SPOT_BaseWrapper() {
 		this->timings = nullptr;
 		this->maximum_iterations = 200;
@@ -67,7 +68,9 @@ namespace spot_wrappers {
 	void SPOT_BaseWrapper::set_maximum_directions(const std::uint32_t new_directions_max) {
 		this->maximum_directions = new_directions_max;
 	}
+	//endregion
 
+	//region --- FISTWrapperRandomModels implementation ---
 	FISTWrapperRandomModels::FISTWrapperRandomModels(std::uint32_t src_distrib_size, std::uint32_t tgt_distrib_size, double radius)
 		: src_size(src_distrib_size), tgt_size(tgt_distrib_size), point_cloud_radius(radius),
 		computed_transform(glm::identity<glm::mat4>()), computed_translation(glm::vec4{}), computed_scaling(1.0),
@@ -96,7 +99,7 @@ namespace spot_wrappers {
 		if (enable_timings) {
 			this->timings = std::make_unique<micro_benchmarks::TimingsLogger>(this->maximum_iterations);
 		}
-		sliced.fast_iterative_sliced_transport(
+		this->timings = sliced.fast_iterative_sliced_transport(
 			static_cast<int>(this->maximum_iterations),
 			static_cast<int>(this->maximum_directions),
 			this->source_distribution, this->target_distribution,
@@ -146,7 +149,9 @@ namespace spot_wrappers {
 	std::uint32_t FISTWrapperRandomModels::get_target_distribution_size() const {
 		return this->tgt_size;
 	}
+	//endregion
 
+	//region --- FISTWrapperDifferentModels implementation ---
 	FISTWrapperDifferentModels::FISTWrapperDifferentModels(const std::string src_path, const std::string tgt_path) :
 	source_file_path(src_path), target_file_path(tgt_path),SPOT_BaseWrapper()
 	{
@@ -168,8 +173,10 @@ PYBIND11_MODULE(spot, spot_module) {
 	define_glm_type_vector(glm::vec4{}, "glm_vec4", spot_module);
 	define_glm_type_vector(glm::vec3{}, "glm_vec3", spot_module);
 
-	spot_module.def("enable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(true); });
-	spot_module.def("disable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(false); });
+	spot_module.def("enable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(true); })
+		.doc() = "Enables reproducible runs : sets the random engine to be initialized with a constant value instead of a timestamp.";
+	spot_module.def("disable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(false); })
+		.doc() = "Disables reproducible runs : sets the random engine to be initialized with a timestamp instead of a constant value.";
 
 	/// @brief simple typedef, to make the following lines easier to read :
 	using FISTRandom = spot_wrappers::FISTWrapperRandomModels;

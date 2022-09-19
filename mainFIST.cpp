@@ -60,7 +60,7 @@ int main()
 	std::vector<double> trans(3);
 	double scaling;
 	auto logger = std::make_unique<micro_benchmarks::TimingsLogger>(FIST_iters);
-	sliced.fast_iterative_sliced_transport(FIST_iters, slices, randomPoint1, randomPoint2, rot, trans, true, scaling, std::move(logger));
+	logger = sliced.fast_iterative_sliced_transport(FIST_iters, slices, randomPoint1, randomPoint2, rot, trans, true, scaling, std::move(logger));
 
 	logger->print_timings("", "[Time statistics]");
 	std::cout << "scale: " << scaling << std::endl;
