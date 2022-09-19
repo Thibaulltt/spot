@@ -141,14 +141,14 @@ Model load_off_file(const std::string& filename)
 }
 
 Model::Model() : positions(), triangles() {
-	throw std::logic_error("Cannot contruct empty model.");
+	throw std::logic_error("Cannot construct empty model.");
 }
 
 Model::Model(const std::vector<glm::vec3>& vertices, const std::vector<glm::uvec3> _triangles) :
 	positions(vertices.cbegin(), vertices.cend()), triangles(_triangles) {}
 	// Note : range-based ctor of vector is supposed to perform the conversions automatically if an explicit cast op exists.
 
-Model::Model(const Model& _other) : positions(_other.positions), triangles(_other.triangles) {}
+Model::Model(const Model& _other) = default;
 
 void Model::apply_transform(const glm::mat3 matrix) {
 	std::for_each(positions.begin(), positions.end(), [&](Point<3, float>& position) {
