@@ -11,6 +11,7 @@
 
 #include "./micro_benchmark.hpp"
 #include "./UnbalancedSliced.h"
+#include "./model.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -116,7 +117,35 @@ namespace spot_wrappers {
 
 		std::vector<Point<3, double>> source_distribution; ///< The source point cloud.
 		std::vector<Point<3, double>> target_distribution; ///< The target point cloud.
+	};
 
+	class FISTWrapperDifferentModels : public SPOT_BaseWrapper {
+	public:
+		FISTWrapperDifferentModels(std::string, std::string);
+		~FISTWrapperDifferentModels() override;
+
+		/// @brief Computes the transformation between the two models.
+		void compute_transformation(bool enable_timings) override;
+
+		/// @brief Gets the source distribution data.
+		point_tensor_t get_source_point_cloud_py() const override;
+		/// @brief Gets the target distribution data.
+		point_tensor_t get_target_point_cloud_py() const override;
+
+		/// @brief Gets the currently computed rotation/scale matrix.
+		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
+		glm::mat4 get_transform_matrix() const;
+		/// @brief Gets the currently computed translation.
+		glm::vec4 get_transform_translation() const;
+		/// @brief Returns the computed scaling parameter if requested.
+		double get_transform_scaling() const;
+
+	protected:
+		const std::string source_file_path;
+		const std::string target_file_path;
+
+		Model source_model;
+		Model target_model;
 	};
 
 }// namespace spot_wrappers

@@ -146,6 +146,14 @@ namespace spot_wrappers {
 	std::uint32_t FISTWrapperRandomModels::get_target_distribution_size() const {
 		return this->tgt_size;
 	}
+
+	FISTWrapperDifferentModels::FISTWrapperDifferentModels(const std::string src_path, const std::string tgt_path) :
+	source_file_path(src_path), target_file_path(tgt_path),SPOT_BaseWrapper()
+	{
+		this->source_model = load_off_file(this->source_file_path);
+		this->target_model = load_off_file(this->target_file_path);
+	}
+
 }
 
 PYBIND11_MODULE(spot, spot_module) {
