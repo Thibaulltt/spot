@@ -22,10 +22,10 @@
 namespace spot_wrappers {
 
 	/// @brief Simple typedef to an array type containing the points' data.
-	using point_tensor_t = pybind11::array_t<Point<3, double>>;
+	using point_tensor_t = pybind11::array_t<Point<3, float>>;
 
 	/// @brief Controls whether the random engine used to generate random numbers is const-initialized or time-initialized.
-	bool enable_reproducible_runs = false;
+	static bool enable_reproducible_runs = false;
 
 	/// @brief Enables or disables the ``enable_reproducible_runs`` variable, and re-initializes the random engines.
 	void set_enable_reproducible_runs(bool _enable);
@@ -78,6 +78,7 @@ namespace spot_wrappers {
 		std::uint32_t maximum_directions; ///< The maximum number of directions evaluated at each registration step.
 	};
 
+	/// @brief This wrapper for the FIST method generates random point clouds and registers them.
 	class FISTWrapperRandomModels : public SPOT_BaseWrapper {
 	public:
 		/// @brief Ctor for a FIST wrapper registering two random point clouds.
@@ -115,10 +116,11 @@ namespace spot_wrappers {
 		std::uint32_t tgt_size;
 		double point_cloud_radius;
 
-		std::vector<Point<3, double>> source_distribution; ///< The source point cloud.
-		std::vector<Point<3, double>> target_distribution; ///< The target point cloud.
+		std::vector<Point<3, float>> source_distribution; ///< The source point cloud.
+		std::vector<Point<3, float>> target_distribution; ///< The target point cloud.
 	};
 
+	/// @brief This wrapper for the FIST method loads two different models and registers them together.
 	class FISTWrapperDifferentModels : public SPOT_BaseWrapper {
 	public:
 		FISTWrapperDifferentModels(std::string, std::string);
@@ -140,9 +142,18 @@ namespace spot_wrappers {
 		/// @brief Returns the computed scaling parameter if requested.
 		double get_transform_scaling() const;
 
+		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
+		std::uint32_t get_source_distribution_size() const;
+		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
+		std::uint32_t get_target_distribution_size() const;
+
 	protected:
 		const std::string source_file_path;
 		const std::string target_file_path;
+
+		glm::mat4 computed_transform;
+		glm::vec4 computed_translation;
+		double computed_scaling;
 
 		Model source_model;
 		Model target_model;

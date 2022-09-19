@@ -123,11 +123,11 @@ namespace spot_wrappers {
 	}
 
 	point_tensor_t FISTWrapperRandomModels::get_source_point_cloud_py() const {
-		return pybind11::array_t<Point<3, double>, pybind11::array::c_style | pybind11::array::forcecast>(this->src_size, this->source_distribution.data());
+		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(this->src_size, this->source_distribution.data());
 	}
 
 	point_tensor_t FISTWrapperRandomModels::get_target_point_cloud_py() const {
-		return pybind11::array_t<Point<3, double>, pybind11::array::c_style | pybind11::array::forcecast>(this->tgt_size, this->target_distribution.data());
+		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(this->tgt_size, this->target_distribution.data());
 	}
 
 	glm::mat4 FISTWrapperRandomModels::get_transform_matrix() const {
@@ -158,6 +158,71 @@ namespace spot_wrappers {
 		this->source_model = load_off_file(this->source_file_path);
 		this->target_model = load_off_file(this->target_file_path);
 	}
+
+	FISTWrapperDifferentModels::~FISTWrapperDifferentModels() noexcept = default;
+
+	void FISTWrapperDifferentModels::compute_transformation(bool enable_timings) {
+		UnbalancedSliced sliced;
+		std::vector<double> rot(9);
+		std::vector<double> trans(3);
+		double scaling;
+		if (enable_timings) {
+			this->timings = std::make_unique<micro_benchmarks::TimingsLogger>(this->maximum_iterations);
+		}
+		this->timings = sliced.fast_iterative_sliced_transport(
+			static_cast<int>(this->maximum_iterations),
+			static_cast<int>(this->maximum_directions),
+			this->source_model.positions, this->target_model.positions,
+			rot, trans, true, scaling, std::move(this->timings)
+		);
+		this->computed_transform = glm::mat4{
+			rot[0], rot[1], rot[2], 0.0f,
+			rot[3], rot[4], rot[5], 0.0f,
+			rot[6], rot[7], rot[8], 0.0f,
+			0.0f,   0.0f,   0.0f,   1.0f
+		};
+		this->computed_translation = glm::vec4(trans[0], trans[1], trans[2], 0.0f);
+		this->computed_scaling = scaling;
+		fmt::print("Registration done.");
+		if (enable_timings) {
+			this->timings->compute_timing_stats();
+			this->timings->print_timings(
+				fmt::format("After registering {} to {} points, transformation is :",
+							this->source_model.positions.size(), this->target_model.positions.size()),
+				"[Final transformation :]");
+		}
+	}
+
+	point_tensor_t FISTWrapperDifferentModels::get_source_point_cloud_py() const {
+		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(
+			this->source_model.positions.size(), this->source_model.positions.data());
+	}
+
+	point_tensor_t FISTWrapperDifferentModels::get_target_point_cloud_py() const {
+		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(
+			this->target_model.positions.size(), this->target_model.positions.data());
+	}
+
+	glm::mat4 FISTWrapperDifferentModels::get_transform_matrix() const {
+		return this->computed_transform;
+	}
+
+	glm::vec4 FISTWrapperDifferentModels::get_transform_translation() const {
+		return this->computed_translation;
+	}
+
+	double FISTWrapperDifferentModels::get_transform_scaling() const {
+		return this->computed_scaling;
+	}
+
+	std::uint32_t FISTWrapperDifferentModels::get_source_distribution_size() const {
+		return static_cast<std::uint32_t>(this->source_model.positions.size());
+	}
+
+	std::uint32_t FISTWrapperDifferentModels::get_target_distribution_size() const {
+		return static_cast<std::uint32_t>(this->target_model.positions.size());
+	}
+	//endregion
 
 }
 
@@ -208,4 +273,24 @@ PYBIND11_MODULE(spot, spot_module) {
 					fist.get_source_distribution_size(), fist.get_target_distribution_size());
 		})
 	    .doc() = "Generates random point clouds and registers them.";
+
+	using FISTDifferent = spot_wrappers::FISTWrapperDifferentModels;
+	pybind11::class_<FISTDifferent>(spot_module, "FISTDifferentPointClouds")
+	    .def(pybind11::init<const std::string&, const std::string&>())
+		.def("matrix", &FISTDifferent::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
+		.def("translation", &FISTDifferent::get_transform_translation)
+		.def("scaling", &FISTDifferent::get_transform_scaling)
+		.def("lap_time", &FISTDifferent::get_running_time, "lap_number"_a)
+		.def("compute_transformation", &FISTDifferent::compute_transformation, "enable_timings"_a = false)
+		.def("print_timings", &FISTDifferent::print_timings, "message"_a = "", "prefix"_a = "")
+		.def("set_max_iterations", &FISTDifferent::set_maximum_iterations, "max_iterations"_a = 200)
+		.def("set_max_directions", &FISTDifferent::set_maximum_directions, "max_directions"_a = 100)
+		.def_property_readonly("source_distribution", &FISTDifferent::get_source_point_cloud_py)
+		.def_property_readonly("target_distribution", &FISTDifferent::get_target_point_cloud_py)
+		.def_property_readonly("running_time", &FISTDifferent::get_total_running_time)
+		.def("__repr__", [](const FISTDifferent& fist) {
+			return fmt::format("<interface to spot_wrappers::FISTWrapperRandomModels with {} and {} samples>",
+							   fist.get_source_distribution_size(), fist.get_target_distribution_size());
+		})
+		.doc() = "Loads two point clouds from OFF files and registers them.";
 }
