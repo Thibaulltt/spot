@@ -123,11 +123,11 @@ namespace spot_wrappers {
 	}
 
 	point_tensor_t FISTWrapperRandomModels::get_source_point_cloud_py() const {
-		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(this->src_size, this->source_distribution.data());
+		return point_tensor_t(this->src_size, this->source_distribution.data());
 	}
 
 	point_tensor_t FISTWrapperRandomModels::get_target_point_cloud_py() const {
-		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(this->tgt_size, this->target_distribution.data());
+		return point_tensor_t(this->tgt_size, this->target_distribution.data());
 	}
 
 	glm::mat4 FISTWrapperRandomModels::get_transform_matrix() const {
@@ -148,6 +148,67 @@ namespace spot_wrappers {
 
 	std::uint32_t FISTWrapperRandomModels::get_target_distribution_size() const {
 		return this->tgt_size;
+	}
+	//endregion
+
+	//region --- FISTWrapperSameModel implementation ---
+	FISTWrapperSameModel::FISTWrapperSameModel(const std::string &src_path) :
+		known_transform(glm::identity<glm::mat3>()), known_translation({}), known_scaling(1.f),
+		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f), source_model_path(src_path),
+		SPOT_BaseWrapper()
+	{
+		this->source_model = load_off_file(source_model_path);
+		this->target_model = Model(this->source_model);
+	}
+
+	FISTWrapperSameModel::FISTWrapperSameModel(const std::string &src_path, const glm::mat3 &rotation,
+		const glm::vec3 &translation) : known_transform(rotation), known_scaling(1.f),
+		known_translation(translation[0], translation[1], translation[2], 0.0f),
+		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
+		source_model_path(src_path),SPOT_BaseWrapper()
+	{
+		this->source_model = load_off_file(source_model_path);
+		this->target_model = Model(this->source_model);
+	}
+
+	FISTWrapperSameModel::FISTWrapperSameModel(const std::string &src_path, const glm::mat3 &rotation,
+		const glm::vec3 &translation, const double &scale) : known_transform(rotation), known_scaling(scale),
+		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
+		known_translation(translation[0], translation[1], translation[2], 0.0f), source_model_path(src_path),
+		SPOT_BaseWrapper()
+	{
+		this->source_model = load_off_file(source_model_path);
+		this->target_model = Model(this->source_model);
+	}
+
+	FISTWrapperSameModel::~FISTWrapperSameModel() = default;
+
+	glm::mat4 FISTWrapperSameModel::get_transform_matrix() const {
+		return this->computed_transform;
+	}
+
+	glm::vec4 FISTWrapperSameModel::get_transform_translation() const {
+		return this->computed_translation;
+	}
+
+	double FISTWrapperSameModel::get_transform_scaling() const {
+		return this->computed_scaling;
+	}
+
+	point_tensor_t FISTWrapperSameModel::get_source_point_cloud_py() const {
+		return point_tensor_t(this->source_model.positions.size(), this->source_model.positions.data());
+	}
+
+	point_tensor_t FISTWrapperSameModel::get_target_point_cloud_py() const {
+		return point_tensor_t(this->target_model.positions.size(), this->target_model.positions.data());
+	}
+
+	std::uint32_t FISTWrapperSameModel::get_source_distribution_size() const {
+		return static_cast<std::uint32_t>(this->source_model.positions.size());
+	}
+
+	std::uint32_t FISTWrapperSameModel::get_target_distribution_size() const {
+		return static_cast<std::uint32_t>(this->target_model.positions.size());
 	}
 	//endregion
 
@@ -194,13 +255,11 @@ namespace spot_wrappers {
 	}
 
 	point_tensor_t FISTWrapperDifferentModels::get_source_point_cloud_py() const {
-		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(
-			this->source_model.positions.size(), this->source_model.positions.data());
+		return point_tensor_t(this->source_model.positions.size(), this->source_model.positions.data());
 	}
 
 	point_tensor_t FISTWrapperDifferentModels::get_target_point_cloud_py() const {
-		return pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>(
-			this->target_model.positions.size(), this->target_model.positions.data());
+		return point_tensor_t(this->target_model.positions.size(), this->target_model.positions.data());
 	}
 
 	glm::mat4 FISTWrapperDifferentModels::get_transform_matrix() const {
@@ -243,9 +302,6 @@ PYBIND11_MODULE(spot, spot_module) {
 	spot_module.def("disable_reproducible_runs", [](){ spot_wrappers::set_enable_reproducible_runs(false); })
 		.doc() = "Disables reproducible runs : sets the random engine to be initialized with a timestamp instead of a constant value.";
 
-	/// @brief simple typedef, to make the following lines easier to read :
-	using FISTRandom = spot_wrappers::FISTWrapperRandomModels;
-
 	// Bind the point struct :
 	pybind11::class_<Point<3, double>>(spot_module, "Point3d", pybind11::buffer_protocol())
 		.def_buffer([](Point<3,double>& point){
@@ -254,7 +310,10 @@ PYBIND11_MODULE(spot, spot_module) {
 			);
 		});
 
-	// Binds the FIST wrapper with random distributions and its member functions :
+	// Bind the FIST wrappers and their member functions :
+
+	// With randomly generated distributions :
+	using FISTRandom = spot_wrappers::FISTWrapperRandomModels;
 	pybind11::class_<FISTRandom>(spot_module, "FISTRandomPointClouds")
 		.def(pybind11::init<const std::uint32_t, const std::uint32_t, const double>())
 		.def("matrix", &FISTRandom::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
@@ -274,6 +333,28 @@ PYBIND11_MODULE(spot, spot_module) {
 		})
 	    .doc() = "Generates random point clouds and registers them.";
 
+	// With the same model and a transform :
+	using FISTSame = spot_wrappers::FISTWrapperSameModel;
+	pybind11::class_<FISTSame>(spot_module, "FISTSamePointClouds")
+		.def(pybind11::init<const std::string&>())
+		.def("matrix", &FISTSame::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
+		.def("translation", &FISTSame::get_transform_translation)
+		.def("scaling", &FISTSame::get_transform_scaling)
+		.def("lap_time", &FISTSame::get_running_time, "lap_number"_a)
+		.def("compute_transformation", &FISTSame::compute_transformation, "enable_timings"_a = false)
+		.def("print_timings", &FISTSame::print_timings, "message"_a = "", "prefix"_a = "")
+		.def("set_max_iterations", &FISTSame::set_maximum_iterations, "max_iterations"_a = 200)
+		.def("set_max_directions", &FISTSame::set_maximum_directions, "max_directions"_a = 100)
+		.def_property_readonly("source_distribution", &FISTSame::get_source_point_cloud_py)
+		.def_property_readonly("target_distribution", &FISTSame::get_target_point_cloud_py)
+		.def_property_readonly("running_time", &FISTSame::get_total_running_time)
+		.def("__repr__", [](const FISTSame& fist) {
+			return fmt::format("<interface to spot_wrappers::FISTWrapperRandomModels with {} and {} samples>",
+							   fist.get_source_distribution_size(), fist.get_target_distribution_size());
+		})
+		.doc() = "Loads two point clouds from OFF files and registers them.";
+
+	// With different models :
 	using FISTDifferent = spot_wrappers::FISTWrapperDifferentModels;
 	pybind11::class_<FISTDifferent>(spot_module, "FISTDifferentPointClouds")
 	    .def(pybind11::init<const std::string&, const std::string&>())
