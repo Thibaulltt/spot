@@ -48,7 +48,7 @@ namespace spot_wrappers {
 
 		/// @brief Launches the SPOT method.
 		/// @param enable_timings Whether to enable benchmark timings for the current run.
-		virtual void compute_transformation(bool enable_timings) = 0;
+		virtual void compute_transformation(bool enable_timings = false) = 0;
 
 		/// @brief Gets the source distribution data.
 		virtual point_tensor_t get_source_point_cloud_py() const = 0;
@@ -130,7 +130,7 @@ namespace spot_wrappers {
 	public:
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a random (rigid) transform.
 		/// @param src_path The source path to the file to load.
-		FISTWrapperSameModel(std::string src_path);
+		explicit FISTWrapperSameModel(std::string src_path);
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a given (rigid) transform.
 		/// @param src_path The source path to the file to load.
 		/// @param rotation The rotation matrix to apply to the model.
@@ -147,7 +147,7 @@ namespace spot_wrappers {
 		/// @brief Default dtor of the class.
 		~FISTWrapperSameModel() override;
 
-		void compute_transformation(bool enable_timings) override;
+		void compute_transformation(bool enable_timings = false) override;
 
 		/// @brief Gets the currently computed rotation/scale matrix.
 		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
@@ -193,7 +193,7 @@ namespace spot_wrappers {
 		~FISTWrapperDifferentModels() override;
 
 		/// @brief Computes the transformation between the two models.
-		void compute_transformation(bool enable_timings) override;
+		void compute_transformation(bool enable_timings = false) override;
 
 		/// @brief Gets the currently computed rotation/scale matrix.
 		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.

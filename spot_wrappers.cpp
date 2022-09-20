@@ -78,14 +78,14 @@ namespace spot_wrappers {
 	{
 		// Generate random point clouds :
 		for (std::size_t i = 0; i < this->src_size; ++i) {
-			this->source_distribution[i][0] = uniform(engine) * this->point_cloud_radius;
-			this->source_distribution[i][1] = uniform(engine) * this->point_cloud_radius;
-			this->source_distribution[i][2] = uniform(engine) * this->point_cloud_radius;
+			this->source_distribution[i][0] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
+			this->source_distribution[i][1] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
+			this->source_distribution[i][2] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 		}
 		for (std::size_t i = 0; i < this->tgt_size; ++i) {
-			this->target_distribution[i][0] = uniform(engine) * this->point_cloud_radius;
-			this->target_distribution[i][1] = uniform(engine) * this->point_cloud_radius;
-			this->target_distribution[i][2] = uniform(engine) * this->point_cloud_radius;
+			this->target_distribution[i][0] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
+			this->target_distribution[i][1] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
+			this->target_distribution[i][2] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 		}
 	}
 
@@ -187,7 +187,7 @@ namespace spot_wrappers {
 
 	FISTWrapperSameModel::~FISTWrapperSameModel() = default;
 
-	void FISTWrapperSameModel::compute_transformation(bool enable_timings = false) {
+	void FISTWrapperSameModel::compute_transformation(bool enable_timings) {
 		//
 	}
 
@@ -204,11 +204,11 @@ namespace spot_wrappers {
 	}
 
 	point_tensor_t FISTWrapperSameModel::get_source_point_cloud_py() const {
-		return point_tensor_t(this->source_model.positions.size(), this->source_model.positions.data());
+		return point_tensor_t(static_cast<ssize_t>(this->source_model.positions.size()), this->source_model.positions.data());
 	}
 
 	point_tensor_t FISTWrapperSameModel::get_target_point_cloud_py() const {
-		return point_tensor_t(this->target_model.positions.size(), this->target_model.positions.data());
+		return point_tensor_t(static_cast<ssize_t>(this->target_model.positions.size()), this->target_model.positions.data());
 	}
 
 	std::uint32_t FISTWrapperSameModel::get_source_distribution_size() const {
@@ -221,14 +221,15 @@ namespace spot_wrappers {
 	//endregion
 
 	//region --- FISTWrapperDifferentModels implementation ---
-	FISTWrapperDifferentModels::FISTWrapperDifferentModels(const std::string src_path, const std::string tgt_path) :
-	source_file_path(src_path), target_file_path(tgt_path),SPOT_BaseWrapper()
+	FISTWrapperDifferentModels::FISTWrapperDifferentModels(std::string src_path, std::string tgt_path) :
+	computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.0),
+	source_file_path(std::move(src_path)), target_file_path(std::move(tgt_path)),SPOT_BaseWrapper()
 	{
 		this->source_model = load_off_file(this->source_file_path);
 		this->target_model = load_off_file(this->target_file_path);
 	}
 
-	FISTWrapperDifferentModels::~FISTWrapperDifferentModels() noexcept = default;
+	FISTWrapperDifferentModels::~FISTWrapperDifferentModels() = default;
 
 	void FISTWrapperDifferentModels::compute_transformation(bool enable_timings) {
 		UnbalancedSliced sliced;
@@ -263,11 +264,11 @@ namespace spot_wrappers {
 	}
 
 	point_tensor_t FISTWrapperDifferentModels::get_source_point_cloud_py() const {
-		return point_tensor_t(this->source_model.positions.size(), this->source_model.positions.data());
+		return point_tensor_t(static_cast<ssize_t>(this->source_model.positions.size()), this->source_model.positions.data());
 	}
 
 	point_tensor_t FISTWrapperDifferentModels::get_target_point_cloud_py() const {
-		return point_tensor_t(this->target_model.positions.size(), this->target_model.positions.data());
+		return point_tensor_t(static_cast<ssize_t>(this->target_model.positions.size()), this->target_model.positions.data());
 	}
 
 	glm::mat4 FISTWrapperDifferentModels::get_transform_matrix() const {
