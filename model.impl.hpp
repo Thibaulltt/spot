@@ -160,5 +160,31 @@ void Model::apply_transform(const glm::mat3 matrix) {
 
 void Model::apply_translation(const glm::vec3 translate) {
 	Point<3, float> t{translate};
-	std::for_each(this->positions.begin(), this->positions.end(), std::bind(&Point<3,float>::operator+=, std::placeholders::_1, t));
+	std::for_each(this->positions.begin(), this->positions.end(),
+		[t](Point<3, float> const& p) {
+			return p + t;
+		}
+	);
+}
+
+void Model::apply_scaling(double scaling = 1.0, bool center_before_scaling = true) {
+	Point<3, float> center{};
+	if (center_before_scaling) {
+		std::for_each(this->positions.begin(), this->positions.end(),
+			[&center](Point<3, float> const& p) {
+				center += p;
+			}
+		);
+		this->apply_translation(glm::to_vec(-center));
+	}
+
+	std::for_each(this->positions.begin(), this->positions.end(),
+		[scaling](Point<3, float>& p){
+			p *= static_cast<float>(scaling);
+		}
+	);
+
+	if (center_before_scaling) {
+		this->apply_translation(glm::to_vec(center));
+	}
 }

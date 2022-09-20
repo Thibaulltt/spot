@@ -1067,6 +1067,8 @@ public:
 		if (time_logger) {
 			time_logger->compute_timing_stats();
 		}
+
+		return time_logger;
 	}
 
 

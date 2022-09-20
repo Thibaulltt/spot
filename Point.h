@@ -68,11 +68,18 @@ public:
 			coords[i] -= rhs[i];
 		}
 	}
-	bool operator==(const Point<DIM, T>& rhs) {		
+	bool operator==(const Point<DIM, T>& rhs) {
 		for (int i = 0; i < DIM; i++) {
 			if (coords[i] != rhs[i]) return false;
 		}
 		return true;
+	}
+	Point<DIM, T> operator-() {
+		Point<DIM, T> ret;
+		for (int i = 0; i < DIM; ++i) {
+			ret[i] = -this->operator[](i);
+		}
+		return ret;
 	}
 
 	/// @brief Computes the squared norm of the vector from this sample to the origin.
@@ -120,4 +127,17 @@ Point<DIM, T> operator-(const Point<DIM, T> &p, const Point<DIM, T> &q) {
 		r[i] = p[i] - q[i];
 	}
 	return r;
+}
+
+namespace glm {
+
+	template<int DIM, typename T>
+	vec<DIM, T, highp> to_vec(Point<DIM, T> const& p){
+		vec<DIM, T, highp> r{};
+		for (int i = 0; i < DIM; ++i) {
+			r[i] = p[i];
+		}
+		return r;
+	}
+
 }

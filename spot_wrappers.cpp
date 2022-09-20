@@ -152,36 +152,44 @@ namespace spot_wrappers {
 	//endregion
 
 	//region --- FISTWrapperSameModel implementation ---
-	FISTWrapperSameModel::FISTWrapperSameModel(const std::string &src_path) :
+	FISTWrapperSameModel::FISTWrapperSameModel(std::string src_path) :
 		known_transform(glm::identity<glm::mat3>()), known_translation({}), known_scaling(1.f),
-		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f), source_model_path(src_path),
-		SPOT_BaseWrapper()
+		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
+		source_model_path(std::move(src_path)), SPOT_BaseWrapper()
 	{
-		this->source_model = load_off_file(source_model_path);
-		this->target_model = Model(this->source_model);
+		this->initialize_and_transform_models();
 	}
 
-	FISTWrapperSameModel::FISTWrapperSameModel(const std::string &src_path, const glm::mat3 &rotation,
-		const glm::vec3 &translation) : known_transform(rotation), known_scaling(1.f),
+	FISTWrapperSameModel::FISTWrapperSameModel(std::string src_path, glm::mat3 rotation, glm::vec3 translation) :
+		known_transform(rotation), known_scaling(1.f),
 		known_translation(translation[0], translation[1], translation[2], 0.0f),
 		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
-		source_model_path(src_path),SPOT_BaseWrapper()
+		source_model_path(std::move(src_path)),SPOT_BaseWrapper()
 	{
-		this->source_model = load_off_file(source_model_path);
-		this->target_model = Model(this->source_model);
+		this->initialize_and_transform_models();
 	}
 
-	FISTWrapperSameModel::FISTWrapperSameModel(const std::string &src_path, const glm::mat3 &rotation,
-		const glm::vec3 &translation, const double &scale) : known_transform(rotation), known_scaling(scale),
-		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
-		known_translation(translation[0], translation[1], translation[2], 0.0f), source_model_path(src_path),
-		SPOT_BaseWrapper()
+	FISTWrapperSameModel::FISTWrapperSameModel(std::string src_path, glm::mat3 rotation, glm::vec3 translation,
+		double scale) : known_transform(rotation), known_scaling(scale), computed_transform(glm::identity<glm::mat4>()),
+		computed_translation({}), computed_scaling(1.f), source_model_path(std::move(src_path)),
+		known_translation(translation[0], translation[1], translation[2], 0.0f), SPOT_BaseWrapper()
 	{
-		this->source_model = load_off_file(source_model_path);
+		this->initialize_and_transform_models();
+	}
+
+	void FISTWrapperSameModel::initialize_and_transform_models() {
+		this->source_model = load_off_file(this->source_model_path);
 		this->target_model = Model(this->source_model);
+		this->target_model.apply_scaling(this->known_scaling);
+		this->target_model.apply_transform(this->known_transform);
+		this->target_model.apply_translation(this->known_translation);
 	}
 
 	FISTWrapperSameModel::~FISTWrapperSameModel() = default;
+
+	void FISTWrapperSameModel::compute_transformation(bool enable_timings = false) {
+		//
+	}
 
 	glm::mat4 FISTWrapperSameModel::get_transform_matrix() const {
 		return this->computed_transform;
@@ -336,7 +344,9 @@ PYBIND11_MODULE(spot, spot_module) {
 	// With the same model and a transform :
 	using FISTSame = spot_wrappers::FISTWrapperSameModel;
 	pybind11::class_<FISTSame>(spot_module, "FISTSamePointClouds")
-		.def(pybind11::init<const std::string&>())
+		.def(pybind11::init<std::string>())
+		.def(pybind11::init<std::string, glm::mat3, glm::vec3>())
+		.def(pybind11::init<std::string, glm::mat3, glm::vec3, double>())
 		.def("matrix", &FISTSame::get_transform_matrix, pybind11::doc("Matrix documentation :)"))
 		.def("translation", &FISTSame::get_transform_translation)
 		.def("scaling", &FISTSame::get_transform_scaling)

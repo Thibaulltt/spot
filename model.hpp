@@ -34,9 +34,16 @@ struct Model {
 	~Model() = default;
 
 	/// @brief Applies a matrix transform to the positions.
-	void apply_transform(glm::mat3);
+	/// @param transform The transform to apply. Should be rigid body, but can be anything.
+	void apply_transform(glm::mat3 transform);
 	/// @brief Applies a translation to all positions.
-	void apply_translation(glm::vec3);
+	/// @param translation The translation to apply.
+	void apply_translation(glm::vec3 translation);
+	/// @brief Applies a scaling factor to the positions of the model.
+	/// @param scaling The scaling factor to apply.
+	/// @param center_before_scaling If true, this centers the mean of the model to the origin, scales and replaces the
+	///   model to its original position.
+	void apply_scaling(double scaling, bool center_before_scaling);
 
 	std::vector<Point<3, float>> positions;
 	std::vector<glm::uvec3> triangles;

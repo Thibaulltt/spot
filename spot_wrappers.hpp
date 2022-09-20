@@ -130,22 +130,24 @@ namespace spot_wrappers {
 	public:
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a random (rigid) transform.
 		/// @param src_path The source path to the file to load.
-		FISTWrapperSameModel(std::string const& src_path);
+		FISTWrapperSameModel(std::string src_path);
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a given (rigid) transform.
 		/// @param src_path The source path to the file to load.
 		/// @param rotation The rotation matrix to apply to the model.
 		/// @param translation The translation vector to apply to the model.
 		/// @note No checks are performed to see if the given rotation matrix is rigid.
-		FISTWrapperSameModel(std::string const& src_path, glm::mat3 const& rotation, glm::vec3 const& translation);
+		FISTWrapperSameModel(std::string src_path, glm::mat3 rotation, glm::vec3 translation);
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a given (similarity) transform.
 		/// @param src_path The source path to the file to load.
 		/// @param rotation The rotation matrix to apply to the model.
 		/// @param translation The translation vector to apply to the model.
 		/// @param scale The isotropic scale parameter to apply to the model.
 		/// @note No checks are performed to see if the given rotation matrix is rigid.
-		FISTWrapperSameModel(std::string const& src_path, glm::mat3 const& rotation, glm::vec3 const& translation, double const& scale);
+		FISTWrapperSameModel(std::string src_path, glm::mat3 rotation, glm::vec3 translation, double scale);
 		/// @brief Default dtor of the class.
 		~FISTWrapperSameModel() override;
+
+		void compute_transformation(bool enable_timings) override;
 
 		/// @brief Gets the currently computed rotation/scale matrix.
 		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
@@ -164,6 +166,10 @@ namespace spot_wrappers {
 		std::uint32_t get_source_distribution_size() const override;
 		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
 		std::uint32_t get_target_distribution_size() const override;
+
+	private:
+		/// @brief Loads the model, and transforms the "target" with the known transform.
+		void initialize_and_transform_models();
 
 	protected:
 		std::string source_model_path;
@@ -206,10 +212,6 @@ namespace spot_wrappers {
 		std::uint32_t get_source_distribution_size() const override;
 		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
 		std::uint32_t get_target_distribution_size() const override;
-
-	private:
-		/// @brief Loads the model, and transforms the "target" with the known transform.
-		void intialize_and_transform_models();
 
 	protected:
 		const std::string source_file_path;
