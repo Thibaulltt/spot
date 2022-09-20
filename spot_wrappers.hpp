@@ -22,7 +22,7 @@
 namespace spot_wrappers {
 
 	/// @brief Simple typedef to an array type containing the points' data.
-	using point_tensor_t = pybind11::array_t<Point<3, float>, pybind11::array::c_style | pybind11::array::forcecast>;
+	using point_tensor_t = pybind11::array_t<Point<3, float>, pybind11::array::forcecast>;
 
 	/// @brief Controls whether the random engine used to generate random numbers is const-initialized or time-initialized.
 	static bool enable_reproducible_runs = false;
@@ -147,6 +147,7 @@ namespace spot_wrappers {
 		/// @brief Default dtor of the class.
 		~FISTWrapperSameModel() override;
 
+		/// @brief Computes the transformation between the source and transformed model.
 		void compute_transformation(bool enable_timings = false) override;
 
 		/// @brief Gets the currently computed rotation/scale matrix.
@@ -156,6 +157,13 @@ namespace spot_wrappers {
 		glm::vec4 get_transform_translation() const;
 		/// @brief Returns the computed scaling parameter if requested.
 		double get_transform_scaling() const;
+
+		/// @brief Returns the previously-applied matrix.
+		glm::mat4 get_known_matrix() const;
+		/// @brief Returns the previously-applied translation.
+		glm::vec4 get_known_translation() const;
+		/// @brief Returns the previously-applied scale factor.
+		double get_known_scaling() const;
 
 		/// @brief Gets the source distribution data.
 		point_tensor_t get_source_point_cloud_py() const override;
@@ -189,7 +197,9 @@ namespace spot_wrappers {
 	/// @brief This wrapper for the FIST method loads two different models and registers them together.
 	class FISTWrapperDifferentModels : public SPOT_BaseWrapper {
 	public:
+		/// @brief Default ctor. Initializes both models to load.
 		FISTWrapperDifferentModels(std::string, std::string);
+		/// @brief Default ctor. Kept as default.
 		~FISTWrapperDifferentModels() override;
 
 		/// @brief Computes the transformation between the two models.
@@ -239,6 +249,9 @@ namespace spot_wrappers {
 template <glm::length_t C, glm::length_t R, typename T, glm::qualifier Q>
 auto define_glm_type_matrix(glm::mat<C, R, T, Q> const& matrix_ctad, const std::string& type_name, pybind11::module_& m) {
 	return pybind11::class_<glm::mat<C, R, T, Q>>(m, type_name.c_str(), pybind11::buffer_protocol())
+		.def(pybind11::init<>(), pybind11::doc("Initialize an empty matrix."))
+		.def(pybind11::init<T&>(), pybind11::arg("diag_value"), pybind11::doc("Initialize the matrix with the given value on the diagonal"))
+		.def(pybind11::init<glm::mat<C, R, T, Q>&>(), pybind11::arg("matrix"), pybind11::doc("Copies the given matrix"))
 		.def_buffer([](glm::mat<C, R, T, Q>& matrix) -> pybind11::buffer_info {
 			return pybind11::buffer_info(
 				&matrix[0][0],								/* Pointer to buffer */
@@ -248,6 +261,9 @@ auto define_glm_type_matrix(glm::mat<C, R, T, Q> const& matrix_ctad, const std::
 				{ R, C }, 									/* Buffer dimensions */
 				{ sizeof(T) * R, sizeof(T) } 				/* Strides in bytes for each index */
 			);
+		})
+		.def("__repr__", [](const glm::mat<C, R, T, Q>& m) {
+			return fmt::format("<interface to glm::mat{}x{}>", C, R);
 		});
 }
 
@@ -262,6 +278,9 @@ auto define_glm_type_matrix(glm::mat<C, R, T, Q> const& matrix_ctad, const std::
 template <glm::length_t L, typename T, glm::qualifier Q>
 auto define_glm_type_vector(glm::vec<L, T, Q> const& vec_ctad, const std::string& type_name, pybind11::module_& m) {
 	return pybind11::class_<glm::vec<L, T, Q>>(m, type_name.c_str(), pybind11::buffer_protocol())
+		.def(pybind11::init<>(), pybind11::doc("Initializes an empty vector"))
+		.def(pybind11::init<T&>(), pybind11::arg("scalar"), pybind11::doc("Initializes a vector filled with the given scalar value"))
+		.def(pybind11::init<glm::vec<L, T, Q>>(), pybind11::arg("vector"), pybind11::doc("Copies the given vector"))
 		.def_buffer([](glm::vec<L, T, Q>& vector) -> pybind11::buffer_info {
 			return pybind11::buffer_info(
 				&vector[0],									/* Pointer to buffer */
@@ -271,6 +290,9 @@ auto define_glm_type_vector(glm::vec<L, T, Q> const& vec_ctad, const std::string
 				{ L },	 									/* Buffer dimensions */
 				{ sizeof(T) } 								/* Strides in bytes for each index */
 			);
+		})
+		.def("__repr__", [](const glm::vec<L, T, Q>& v) {
+			return fmt::format("<interface to glm::vec{}>", L);
 		});
 }
 

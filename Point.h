@@ -91,6 +91,10 @@ public:
 		return s;
 	}
 
+	T* get() {
+		return &this->coords[0];
+	}
+
 	T coords[DIM]; ///< The coordinate of the sample, in n-dimensional space.
 };
 
