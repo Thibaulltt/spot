@@ -1,13 +1,6 @@
 #include "./spot_wrappers.hpp"
-#include "glm_bridge.hpp"
-
-#include <pybind11/attr.h>
-#include <pybind11/buffer_info.h>
-#include <pybind11/numpy.h>
 
 namespace spot_wrappers {
-
-	constexpr bool enable_debug = true;
 
 	/// @brief Temporary debug function.
 	template<typename...T>
@@ -38,8 +31,8 @@ namespace spot_wrappers {
 
 	point_tensor_t point_vector_to_tensor(const std::vector<Point<3, float>>& source) {
 		return point_tensor_t(
-			pybind11::array::ShapeContainer({static_cast<ssize_t>(3), static_cast<ssize_t>(source.size())}),
-			pybind11::array::StridesContainer({sizeof(float) * 3, sizeof(float)}),
+			pybind11::array::ShapeContainer({static_cast<ssize_t>(source.size()), static_cast<ssize_t>(3)}),
+			pybind11::array::StridesContainer({sizeof(float), sizeof(float) * 3}),
 			reinterpret_cast<float*>(const_cast<Point<3, float>*>(source.data())),
 			pybind11::array::handle()
 		);
@@ -108,25 +101,17 @@ namespace spot_wrappers {
 		source_distribution(src_distrib_size), target_distribution(tgt_distrib_size), SPOT_BaseWrapper()
 	{
 		fmtdbg("FISTWrapperRandomModels::ctor({}, {}, {})", this->src_size, this->tgt_size, this->point_cloud_radius);
-		fmtdbg("-------------------------");
 		// Generate random point clouds :
 		for (std::size_t i = 0; i < static_cast<std::size_t>(this->src_size); ++i) {
-			fmtdbg("HELLO !");
 			this->source_distribution[i][0] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 			this->source_distribution[i][1] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 			this->source_distribution[i][2] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
-			fmtdbg("ctor::src[{: >5d}] : {: >10.7f} {: >10.7f} {: >10.7f}");
 		}
-		fmtdbg("-------------------------");
 		for (std::size_t i = 0; i < static_cast<std::size_t>(this->tgt_size); ++i) {
-			fmtdbg("HELLO !");
 			this->target_distribution[i][0] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 			this->target_distribution[i][1] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 			this->target_distribution[i][2] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
-			fmtdbg("ctor::tgt[{: >5d}] : {: >10.7f} {: >10.7f} {: >10.7f}");
 		}
-		fmtdbg("-------------------------");
-		fmtdbg("Generated distributions");
 	}
 
 	FISTWrapperRandomModels::~FISTWrapperRandomModels() = default;
@@ -156,7 +141,6 @@ namespace spot_wrappers {
 		this->computed_scaling = scaling;
 		fmt::print("Registration done.");
 		if (enable_timings) {
-			this->timings->compute_timing_stats();
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :", this->src_size, this->tgt_size),
 				"[Final transformation :]");
@@ -181,6 +165,22 @@ namespace spot_wrappers {
 
 	double FISTWrapperRandomModels::get_transform_scaling() const {
 		return this->computed_scaling;
+	}
+
+	std::vector<Point<3, float>>& FISTWrapperRandomModels::get_source_distribution() {
+		return this->source_distribution;
+	}
+
+	const std::vector<Point<3, float>>& FISTWrapperRandomModels::get_source_distribution() const {
+		return this->source_distribution;
+	}
+
+	std::vector<Point<3, float>>& FISTWrapperRandomModels::get_target_distribution() {
+		return this->target_distribution;
+	}
+
+	const std::vector<Point<3, float>>& FISTWrapperRandomModels::get_target_distribution() const {
+		return this->target_distribution;
 	}
 
 	std::uint32_t FISTWrapperRandomModels::get_source_distribution_size() const {
@@ -259,7 +259,6 @@ namespace spot_wrappers {
 		this->computed_scaling = scaling;
 		fmt::print("Registration done.");
 		if (enable_timings) {
-			this->timings->compute_timing_stats();
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :",
 							this->source_model.positions.size(), this->target_model.positions.size()),
@@ -289,6 +288,22 @@ namespace spot_wrappers {
 
 	double FISTWrapperSameModel::get_known_scaling() const {
 		return this->known_scaling;
+	}
+
+	std::vector<Point<3, float>>& FISTWrapperSameModel::get_source_distribution() {
+		return this->source_model.positions;
+	}
+
+	const std::vector<Point<3, float>>& FISTWrapperSameModel::get_source_distribution() const {
+		return this->source_model.positions;
+	}
+
+	std::vector<Point<3, float>>& FISTWrapperSameModel::get_target_distribution() {
+		return this->target_model.positions;
+	}
+
+	const std::vector<Point<3, float>>& FISTWrapperSameModel::get_target_distribution() const {
+		return this->target_model.positions;
 	}
 
 	point_tensor_t FISTWrapperSameModel::get_source_point_cloud_py() const {
@@ -343,7 +358,6 @@ namespace spot_wrappers {
 		this->computed_scaling = scaling;
 		fmt::print("Registration done.");
 		if (enable_timings) {
-			this->timings->compute_timing_stats();
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :",
 							this->source_model.positions.size(), this->target_model.positions.size()),
@@ -369,6 +383,22 @@ namespace spot_wrappers {
 
 	double FISTWrapperDifferentModels::get_transform_scaling() const {
 		return this->computed_scaling;
+	}
+
+	std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_source_distribution() {
+		return this->source_model.positions;
+	}
+
+	const std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_source_distribution() const {
+		return this->source_model.positions;
+	}
+
+	std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_target_distribution() {
+		return this->target_model.positions;
+	}
+
+	const std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_target_distribution() const {
+		return this->target_model.positions;
 	}
 
 	std::uint32_t FISTWrapperDifferentModels::get_source_distribution_size() const {

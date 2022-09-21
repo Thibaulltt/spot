@@ -64,7 +64,7 @@ TARGET_LINK_LIBRARIES(colorTransfer
 	PUBLIC fmt::fmt
 )
 
-ADD_LIBRARY(spot_wrappers
+ADD_LIBRARY(spot_wrappers SHARED
 	spot_wrappers.cpp
 	spot_wrappers.hpp
 	micro_benchmark.cpp
@@ -76,6 +76,7 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC glm_bridge
 	PUBLIC pybind11::pybind11
 )
+#SET_TARGET_PROPERTIES(spot_wrappers PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 pybind11_add_module(spot spot_wrappers_python_interface.cpp)
 TARGET_LINK_LIBRARIES(spot

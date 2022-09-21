@@ -9,16 +9,23 @@
  *=============================================
  */
 
-#include "./micro_benchmark.hpp"
-#include "./UnbalancedSliced.h"
-#include "./model.hpp"
+#include "micro_benchmark.hpp"
+#include "UnbalancedSliced.h"
+#include "model.hpp"
+#include "glm_bridge.hpp"
 
+#include <pybind11/attr.h>
+#include <pybind11/buffer_info.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 
 #include <vector>
 
 /// @brief This namespace englobes some wrappers around the SPOT method, in order to benchmark it.
 namespace spot_wrappers {
+
+	/// @brief Enables or disables debug messages in fmtdbg()
+	constexpr bool enable_debug = true;
 
 	/// @brief Simple typedef to an array type containing the points' data.
 	using point_tensor_t = pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast>;
@@ -108,6 +115,15 @@ namespace spot_wrappers {
 		/// @brief Returns the computed scaling parameter if requested.
 		double get_transform_scaling() const;
 
+		/// @brief Returns the source distribution, as a modifiable vector.
+		std::vector<Point<3, float>>& get_source_distribution();
+		/// @brief Returns the source distribution, as a const reference.
+		const std::vector<Point<3, float>>& get_source_distribution() const;
+		/// @brief Returns the target distribution, as a modifiable vector.
+		std::vector<Point<3, float>>& get_target_distribution();
+		/// @brief Returns the target distribution, as a const reference.
+		const std::vector<Point<3, float>>& get_target_distribution() const;
+
 		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
 		std::uint32_t get_source_distribution_size() const override;
 		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
@@ -166,6 +182,15 @@ namespace spot_wrappers {
 		/// @brief Returns the previously-applied scale factor.
 		double get_known_scaling() const;
 
+		/// @brief Returns the source distribution, as a modifiable vector.
+		std::vector<Point<3, float>>& get_source_distribution();
+		/// @brief Returns the source distribution, as a const reference.
+		const std::vector<Point<3, float>>& get_source_distribution() const;
+		/// @brief Returns the target distribution, as a modifiable vector.
+		std::vector<Point<3, float>>& get_target_distribution();
+		/// @brief Returns the target distribution, as a const reference.
+		const std::vector<Point<3, float>>& get_target_distribution() const;
+
 		/// @brief Gets the source distribution data.
 		point_tensor_t get_source_point_cloud_py() const override;
 		/// @brief Gets the target distribution data.
@@ -213,6 +238,15 @@ namespace spot_wrappers {
 		glm::vec4 get_transform_translation() const;
 		/// @brief Returns the computed scaling parameter if requested.
 		double get_transform_scaling() const;
+
+		/// @brief Returns the source distribution, as a modifiable vector.
+		std::vector<Point<3, float>>& get_source_distribution();
+		/// @brief Returns the source distribution, as a const reference.
+		const std::vector<Point<3, float>>& get_source_distribution() const;
+		/// @brief Returns the target distribution, as a modifiable vector.
+		std::vector<Point<3, float>>& get_target_distribution();
+		/// @brief Returns the target distribution, as a const reference.
+		const std::vector<Point<3, float>>& get_target_distribution() const;
 
 		/// @brief Gets the source distribution data.
 		point_tensor_t get_source_point_cloud_py() const override;

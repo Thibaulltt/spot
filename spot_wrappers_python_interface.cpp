@@ -4,8 +4,6 @@
 
 #include "spot_wrappers.hpp"
 
-#include <pybind11/pybind11.h>
-
 PYBIND11_MODULE(spot, spot_module) {
 	// Those argument literals are __really__ useful ...
 	using namespace pybind11::literals;

@@ -971,12 +971,6 @@ public:
 	) {
 		using default_image_t = image_t<double>;
 
-		std::cout << "Registering :\n";
-		std::cout << "\t- " << niters << " iterations,\n";
-		std::cout << "\t- " << nslices << " slices,\n";
-		std::cout << "\t- " << pointsSrc.size() << " points in source,\n";
-		std::cout << "\t- " << pointsDst.size() << " points in target,\n";
-
 		transformation_rotation.resize(DIM * DIM);
 		transformation_translation.resize(DIM);
 		scaling = 1;
@@ -1059,8 +1053,6 @@ public:
 			}
 
 			if (time_logger) { time_logger->stop_lap(); }
-
-			return time_logger;
 		}
 
 		default_image_t rotG(const_cast<double*>(&transformation_rotation[0]), DIM, DIM, 1, 1, true);
