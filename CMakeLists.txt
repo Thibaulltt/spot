@@ -19,7 +19,6 @@ IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Release)
 ENDIF()
 FIND_PACKAGE(OpenMP REQUIRED)
 FIND_PACKAGE(fmt REQUIRED)
-FIND_PACKAGE(assimp REQUIRED)
 FIND_PACKAGE(glm REQUIRED)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options)
 FIND_PACKAGE(pybind11 REQUIRED)
@@ -52,7 +51,6 @@ ADD_EXECUTABLE(FIST
 TARGET_LINK_LIBRARIES(FIST
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
-	PUBLIC assimp::assimp
 	PUBLIC glm_bridge
 	PUBLIC Boost::program_options
 )
@@ -75,9 +73,7 @@ ADD_LIBRARY(spot_wrappers
 TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
-	PUBLIC assimp::assimp
 	PUBLIC glm_bridge
-	PUBLIC Boost::program_options
 	PUBLIC pybind11::pybind11
 )
 

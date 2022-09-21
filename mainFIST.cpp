@@ -34,9 +34,6 @@ int main()
 {
 	omp_set_nested(0);
 
-	//auto scene = load_model_file("/home/thib/Documents/data/medmax/meshes/Test/bunny.off");
-	//print_aiScene_contents(scene);
-
 	constexpr int M = 700;
 	constexpr int N = 1000;
 	int FIST_iters = 200;

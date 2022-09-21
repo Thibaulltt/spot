@@ -8,7 +8,6 @@ ADD_EXECUTABLE(fist_translation_only
 TARGET_LINK_LIBRARIES(fist_translation_only
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
-	PUBLIC assimp::assimp
 	PUBLIC glm_bridge
 )
 ADD_TEST(
@@ -24,7 +23,6 @@ ADD_EXECUTABLE(fist_rigidbody
 TARGET_LINK_LIBRARIES(fist_rigidbody
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
-	PUBLIC assimp::assimp
 	PUBLIC glm_bridge
 )
 ADD_TEST(

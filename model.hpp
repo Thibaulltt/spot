@@ -12,19 +12,8 @@
 #include "glm_bridge.hpp"
 #include "Point.h"
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 #include <string>
 #include <vector>
-
-/// @brief Loads a given path in order to extract a single model from it.
-const aiScene* load_model_file(const std::string load_path);
-
-/// @brief Prints the contents of a loaded `aiScene` pointer.
-/// @note Only there for debugging reasons.
-void print_aiScene_contents(const aiScene* scene);
 
 /// @brief Simple model class, holds positions and triangles of an OFF file.
 struct Model {
