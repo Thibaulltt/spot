@@ -66,11 +66,22 @@ TARGET_LINK_LIBRARIES(colorTransfer
 	PUBLIC fmt::fmt
 )
 
-pybind11_add_module(spot spot_wrappers.hpp spot_wrappers.cpp micro_benchmark.cpp UnbalancedSliced.cpp)
-TARGET_LINK_LIBRARIES(spot
+ADD_LIBRARY(spot_wrappers
+	spot_wrappers.cpp
+	spot_wrappers.hpp
+	micro_benchmark.cpp
+	UnbalancedSliced.cpp
+)
+TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC OpenMP::OpenMP_CXX
 	PUBLIC fmt::fmt
 	PUBLIC assimp::assimp
 	PUBLIC glm_bridge
 	PUBLIC Boost::program_options
+	PUBLIC pybind11::pybind11
+)
+
+pybind11_add_module(spot spot_wrappers_python_interface.cpp)
+TARGET_LINK_LIBRARIES(spot
+	PUBLIC spot_wrappers
 )

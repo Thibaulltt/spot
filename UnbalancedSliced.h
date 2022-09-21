@@ -971,6 +971,12 @@ public:
 	) {
 		using default_image_t = image_t<double>;
 
+		std::cout << "Registering :\n";
+		std::cout << "\t- " << niters << " iterations,\n";
+		std::cout << "\t- " << nslices << " slices,\n";
+		std::cout << "\t- " << pointsSrc.size() << " points in source,\n";
+		std::cout << "\t- " << pointsDst.size() << " points in target,\n";
+
 		transformation_rotation.resize(DIM * DIM);
 		transformation_translation.resize(DIM);
 		scaling = 1;

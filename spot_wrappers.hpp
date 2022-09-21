@@ -13,7 +13,6 @@
 #include "./UnbalancedSliced.h"
 #include "./model.hpp"
 
-#include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
 #include <vector>
@@ -22,10 +21,10 @@
 namespace spot_wrappers {
 
 	/// @brief Simple typedef to an array type containing the points' data.
-	using point_tensor_t = pybind11::array_t<Point<3, float>, pybind11::array::forcecast>;
+	using point_tensor_t = pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast>;
 
 	/// @brief Controls whether the random engine used to generate random numbers is const-initialized or time-initialized.
-	static bool enable_reproducible_runs = false;
+	static bool enable_reproducible_runs = true;
 
 	/// @brief Enables or disables the ``enable_reproducible_runs`` variable, and re-initializes the random engines.
 	void set_enable_reproducible_runs(bool _enable);
@@ -34,6 +33,8 @@ namespace spot_wrappers {
 	/// @details If spot_wrappers::enable_reproducible_runs is true, assigns a constant to the engine initialization. Otherwise,
 	/// will initialize the engines based on the current time duration since the UNIX epoch.
 	void initialize_random_engines();
+
+	point_tensor_t point_vector_to_tensor(std::vector<Point<3, float>>& source);
 
 	/// @brief Base class for the wrappers around the SPOT method.
 	/// @note This class is not meant to be created directly. Its sub-classes are.

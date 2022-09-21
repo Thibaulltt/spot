@@ -4,3 +4,4 @@ ENABLE_TESTING()
 
 ADD_SUBDIRECTORY(fist_method)
 ADD_SUBDIRECTORY(models)
+ADD_SUBDIRECTORY(python_interface)
