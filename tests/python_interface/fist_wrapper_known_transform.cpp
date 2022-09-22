@@ -6,13 +6,14 @@
 #include "../../spot_wrappers.hpp"
 
 int main(int argc, char* argv[]) {
-	glm::vec4 translation(engine(), engine(), engine(), 0.0f);
+	constexpr glm::vec4::value_type factor = 15.0;
+	glm::vec4 translation(uniform(engine) * factor, uniform(engine) * factor, uniform(engine) * factor, 0.0f);
 
 	spot_wrappers::FISTWrapperSameModel known_transform("/home/thib/Documents/data/medmax/meshes/Test/bunny.off", glm::identity<glm::mat4>(),translation);
 	known_transform.compute_transformation(true);
 
-	glm::mat4 extracted_transform = known_transform.get_transform_matrix();
-	glm::vec4 extracted_translation = known_transform.get_transform_translation();
+	glm::mat4 extracted_transform = known_transform.get_computed_matrix();
+	glm::vec4 extracted_translation = known_transform.get_computed_translation();
 
 	constexpr float epsilon_precision = 1e-5f;
 	bool matrix_close = glm::all(glm::bvec4(

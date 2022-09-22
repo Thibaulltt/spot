@@ -80,5 +80,5 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 
 pybind11_add_module(spot spot_wrappers_python_interface.cpp)
 TARGET_LINK_LIBRARIES(spot
-	PUBLIC spot_wrappers
+	PRIVATE spot_wrappers
 )
