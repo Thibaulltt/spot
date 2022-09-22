@@ -45,25 +45,39 @@ namespace spot_wrappers {
 	/// @returns A pybind11::array_t with the right size and data to represent the given vector in python.
 	point_tensor_t point_vector_to_tensor(const std::vector<Point<3, float>>& source);
 
-	/// @brief Base class for the wrappers around the SPOT method.
+	/// @brief Base class for the wrappers around the FIST method.
 	/// @note This class is not meant to be created directly. Its sub-classes are.
-	class SPOT_BaseWrapper {
+	class FIST_BaseWrapper {
 	protected:
 		/// @brief Default ctor for the base wrapper class.
-		SPOT_BaseWrapper();
+		FIST_BaseWrapper();
 
 	public:
 		/// @brief Default dtor for the base wrapper class.
-		virtual ~SPOT_BaseWrapper();
+		virtual ~FIST_BaseWrapper();
 
-		/// @brief Launches the SPOT method.
+		/// @brief Launches the FIST method.
 		/// @param enable_timings Whether to enable benchmark timings for the current run.
 		virtual void compute_transformation(bool enable_timings = false) = 0;
 
 		/// @brief Gets the source distribution data.
-		virtual point_tensor_t get_source_point_cloud_py() const = 0;
+		point_tensor_t get_source_point_cloud_py() const;
 		/// @brief Gets the target distribution data.
-		virtual point_tensor_t get_target_point_cloud_py() const = 0;
+		point_tensor_t get_target_point_cloud_py() const;
+
+		/// @brief Returns a reference to the source distribution.
+		virtual std::vector<Point<3, float>>& get_source_distribution() = 0;
+		/// @brief Returns a const reference to the source distribution.
+		virtual const std::vector<Point<3, float>>& get_source_distribution() const = 0;
+		/// @brief Returns a reference to the target distribution.
+		virtual std::vector<Point<3, float>>& get_target_distribution() = 0;
+		/// @brief Returns a const reference to the target distribution.
+		virtual const std::vector<Point<3, float>>& get_target_distribution() const = 0;
+
+		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
+		std::uint32_t get_source_distribution_size() const;
+		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
+		std::uint32_t get_target_distribution_size() const;
 
 		/// @brief Gets the total running time of the method.
 		/// @returns The sum of all lap times for the last run of the SPOT method, or 0 if no timer was previously used.
@@ -81,20 +95,27 @@ namespace spot_wrappers {
 		/// @brief Sets the new maximum number of directions evaluated at each iteration of the registration.
 		void set_maximum_directions(std::uint32_t new_directions_max);
 
-		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
-		virtual std::uint32_t get_source_distribution_size() const = 0;
-		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
-		virtual std::uint32_t get_target_distribution_size() const = 0;
+		/// @brief Gets the currently computed rotation/scale matrix.
+		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
+		glm::mat4 get_computed_matrix() const;
+		/// @brief Gets the currently computed translation.
+		glm::vec4 get_computed_translation() const;
+		/// @brief Returns the computed scaling parameter if requested.
+		double get_computed_scaling() const;
 
 	protected:
 		std::unique_ptr<micro_benchmarks::TimingsLogger> timings; ///< The benchmark logger, to keep track of the execution times.
 
 		std::uint32_t maximum_iterations; ///< The maximum number of iterations available for registration steps.
 		std::uint32_t maximum_directions; ///< The maximum number of directions evaluated at each registration step.
+
+		glm::mat4 computed_transform;	///< The computed transform for the current instance of this class, or identity<glm::mat4>() beforehand.
+		glm::vec4 computed_translation;	///< The computed translation for the current instance of this class, or a null vector beforehand.
+		double computed_scaling;		///< The computed scale factor for the current instance of this class, or 1.0 beforehand.
 	};
 
 	/// @brief This wrapper for the FIST method generates random point clouds and registers them.
-	class FISTWrapperRandomModels : public SPOT_BaseWrapper {
+	class FISTWrapperRandomModels : public FIST_BaseWrapper {
 	public:
 		/// @brief Ctor for a FIST wrapper registering two random point clouds.
 		FISTWrapperRandomModels(std::uint32_t src_distrib_size, std::uint32_t tgt_distrib_size, double radius);
@@ -104,38 +125,16 @@ namespace spot_wrappers {
 		/// @brief Computes the transformation between the two random point clouds.
 		void compute_transformation(bool enable_timings) override;
 
-		/// @brief Gets the source distribution data.
-		point_tensor_t get_source_point_cloud_py() const override;
-		/// @brief Gets the target distribution data.
-		point_tensor_t get_target_point_cloud_py() const override;
-
-		/// @brief Gets the currently computed rotation/scale matrix.
-		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
-		glm::mat4 get_transform_matrix() const;
-		/// @brief Gets the currently computed translation.
-		glm::vec4 get_transform_translation() const;
-		/// @brief Returns the computed scaling parameter if requested.
-		double get_transform_scaling() const;
-
 		/// @brief Returns the source distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& get_source_distribution();
+		std::vector<Point<3, float>>& get_source_distribution() override;
 		/// @brief Returns the source distribution, as a const reference.
-		const std::vector<Point<3, float>>& get_source_distribution() const;
+		const std::vector<Point<3, float>>& get_source_distribution() const override;
 		/// @brief Returns the target distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& get_target_distribution();
+		std::vector<Point<3, float>>& get_target_distribution() override;
 		/// @brief Returns the target distribution, as a const reference.
-		const std::vector<Point<3, float>>& get_target_distribution() const;
-
-		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t get_source_distribution_size() const override;
-		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t get_target_distribution_size() const override;
+		const std::vector<Point<3, float>>& get_target_distribution() const override;
 
 	protected:
-		glm::mat4 computed_transform;
-		glm::vec4 computed_translation;
-		double computed_scaling;
-
 		std::uint32_t src_size;
 		std::uint32_t tgt_size;
 		double point_cloud_radius;
@@ -145,7 +144,7 @@ namespace spot_wrappers {
 	};
 
 	/// @brief This wrapper for the FIST method loads a model, copies it, and applies a known transform before registering them.
-	class FISTWrapperSameModel : public SPOT_BaseWrapper {
+	class FISTWrapperSameModel : public FIST_BaseWrapper {
 	public:
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a random (rigid) transform.
 		/// @param src_path The source path to the file to load.
@@ -169,14 +168,6 @@ namespace spot_wrappers {
 		/// @brief Computes the transformation between the source and transformed model.
 		void compute_transformation(bool enable_timings = false) override;
 
-		/// @brief Gets the currently computed rotation/scale matrix.
-		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
-		glm::mat4 get_transform_matrix() const;
-		/// @brief Gets the currently computed translation.
-		glm::vec4 get_transform_translation() const;
-		/// @brief Returns the computed scaling parameter if requested.
-		double get_transform_scaling() const;
-
 		/// @brief Returns the previously-applied matrix.
 		glm::mat4 get_known_matrix() const;
 		/// @brief Returns the previously-applied translation.
@@ -185,45 +176,31 @@ namespace spot_wrappers {
 		double get_known_scaling() const;
 
 		/// @brief Returns the source distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& get_source_distribution();
+		std::vector<Point<3, float>>& get_source_distribution() override;
 		/// @brief Returns the source distribution, as a const reference.
-		const std::vector<Point<3, float>>& get_source_distribution() const;
+		const std::vector<Point<3, float>>& get_source_distribution() const override;
 		/// @brief Returns the target distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& get_target_distribution();
+		std::vector<Point<3, float>>& get_target_distribution() override;
 		/// @brief Returns the target distribution, as a const reference.
-		const std::vector<Point<3, float>>& get_target_distribution() const;
-
-		/// @brief Gets the source distribution data.
-		point_tensor_t get_source_point_cloud_py() const override;
-		/// @brief Gets the target distribution data.
-		point_tensor_t get_target_point_cloud_py() const override;
-
-		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t get_source_distribution_size() const override;
-		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t get_target_distribution_size() const override;
+		const std::vector<Point<3, float>>& get_target_distribution() const override;
 
 	private:
 		/// @brief Loads the model, and transforms the "target" with the known transform.
 		void initialize_and_transform_models();
 
 	protected:
-		std::string source_model_path;
+		const std::string source_model_path;
 
 		glm::mat4 known_transform;
 		glm::vec4 known_translation;
 		double known_scaling;
-
-		glm::mat4 computed_transform;
-		glm::vec4 computed_translation;
-		double computed_scaling;
 
 		std::unique_ptr<Model> source_model;
 		std::unique_ptr<Model> target_model;
 	};
 
 	/// @brief This wrapper for the FIST method loads two different models and registers them together.
-	class FISTWrapperDifferentModels : public SPOT_BaseWrapper {
+	class FISTWrapperDifferentModels : public FIST_BaseWrapper {
 	public:
 		/// @brief Default ctor. Initializes both models to load.
 		FISTWrapperDifferentModels(std::string, std::string);
@@ -233,40 +210,18 @@ namespace spot_wrappers {
 		/// @brief Computes the transformation between the two models.
 		void compute_transformation(bool enable_timings = false) override;
 
-		/// @brief Gets the currently computed rotation/scale matrix.
-		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
-		glm::mat4 get_transform_matrix() const;
-		/// @brief Gets the currently computed translation.
-		glm::vec4 get_transform_translation() const;
-		/// @brief Returns the computed scaling parameter if requested.
-		double get_transform_scaling() const;
-
 		/// @brief Returns the source distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& get_source_distribution();
+		std::vector<Point<3, float>>& get_source_distribution() override;
 		/// @brief Returns the source distribution, as a const reference.
-		const std::vector<Point<3, float>>& get_source_distribution() const;
+		const std::vector<Point<3, float>>& get_source_distribution() const override;
 		/// @brief Returns the target distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& get_target_distribution();
+		std::vector<Point<3, float>>& get_target_distribution() override;
 		/// @brief Returns the target distribution, as a const reference.
-		const std::vector<Point<3, float>>& get_target_distribution() const;
-
-		/// @brief Gets the source distribution data.
-		point_tensor_t get_source_point_cloud_py() const override;
-		/// @brief Gets the target distribution data.
-		point_tensor_t get_target_point_cloud_py() const override;
-
-		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t get_source_distribution_size() const override;
-		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t get_target_distribution_size() const override;
+		const std::vector<Point<3, float>>& get_target_distribution() const override;
 
 	protected:
 		const std::string source_file_path;
 		const std::string target_file_path;
-
-		glm::mat4 computed_transform;
-		glm::vec4 computed_translation;
-		double computed_scaling;
 
 		std::unique_ptr<Model> source_model;
 		std::unique_ptr<Model> target_model;
