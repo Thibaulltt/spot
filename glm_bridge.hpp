@@ -54,7 +54,10 @@ template <> struct fmt::formatter<glm::mat4> {
 	template <typename FormatContext>
 	auto format(const glm::mat4& m, FormatContext& ctx) const -> decltype(ctx.out()) {
 		return fmt::format_to(ctx.out(),
-			"[[{} {} {} {}],\n [{} {} {} {}]\n [{} {} {} {}]\n [{} {} {} {}]]",
+			"[[{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}],\n"
+			" [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]\n"
+			" [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]\n"
+			" [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]]",
 			m[0][0], m[0][1], m[0][2], m[0][3],
 			m[1][0], m[1][1], m[1][2], m[1][3],
 			m[2][0], m[2][1], m[2][2], m[2][3],
