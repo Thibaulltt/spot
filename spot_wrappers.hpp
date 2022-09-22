@@ -41,7 +41,9 @@ namespace spot_wrappers {
 	/// will initialize the engines based on the current time duration since the UNIX epoch.
 	void initialize_random_engines();
 
-	point_tensor_t point_vector_to_tensor(std::vector<Point<3, float>>& source);
+	/// @brief Constructs a pybind11::array_t with the given vector data using some dangerous reinterpret_cast calls.
+	/// @returns A pybind11::array_t with the right size and data to represent the given vector in python.
+	point_tensor_t point_vector_to_tensor(const std::vector<Point<3, float>>& source);
 
 	/// @brief Base class for the wrappers around the SPOT method.
 	/// @note This class is not meant to be created directly. Its sub-classes are.
@@ -216,8 +218,8 @@ namespace spot_wrappers {
 		glm::vec4 computed_translation;
 		double computed_scaling;
 
-		Model source_model;
-		Model target_model;
+		std::unique_ptr<Model> source_model;
+		std::unique_ptr<Model> target_model;
 	};
 
 	/// @brief This wrapper for the FIST method loads two different models and registers them together.
@@ -266,8 +268,8 @@ namespace spot_wrappers {
 		glm::vec4 computed_translation;
 		double computed_scaling;
 
-		Model source_model;
-		Model target_model;
+		std::unique_ptr<Model> source_model;
+		std::unique_ptr<Model> target_model;
 	};
 
 }// namespace spot_wrappers

@@ -65,8 +65,8 @@ TARGET_LINK_LIBRARIES(colorTransfer
 )
 
 ADD_LIBRARY(spot_wrappers SHARED
-	spot_wrappers.cpp
 	spot_wrappers.hpp
+	spot_wrappers.cpp
 	micro_benchmark.cpp
 	UnbalancedSliced.cpp
 )

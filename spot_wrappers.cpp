@@ -196,7 +196,7 @@ namespace spot_wrappers {
 	FISTWrapperSameModel::FISTWrapperSameModel(std::string src_path) :
 		known_transform(glm::identity<glm::mat3>()), known_translation({}), known_scaling(1.f),
 		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
-		source_model_path(std::move(src_path)), SPOT_BaseWrapper()
+		source_model_path(std::move(src_path)), source_model(nullptr), target_model(nullptr), SPOT_BaseWrapper()
 	{
 		fmtdbg("FISTWrapperSameModel::ctor({})", src_path);
 		this->initialize_and_transform_models();
@@ -206,7 +206,7 @@ namespace spot_wrappers {
 		known_transform(rotation), known_scaling(1.f),
 		known_translation(translation[0], translation[1], translation[2], 0.0f),
 		computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.f),
-		source_model_path(std::move(src_path)),SPOT_BaseWrapper()
+		source_model_path(std::move(src_path)), source_model(nullptr), target_model(nullptr), SPOT_BaseWrapper()
 	{
 		fmtdbg("FISTWrapperSameModel::ctor({}, mat3, vec3)", src_path);
 		this->initialize_and_transform_models();
@@ -215,7 +215,7 @@ namespace spot_wrappers {
 	FISTWrapperSameModel::FISTWrapperSameModel(std::string src_path, glm::mat3 rotation, glm::vec3 translation,
 		double scale) : known_transform(rotation), known_scaling(scale), computed_transform(glm::identity<glm::mat4>()),
 		computed_translation({}), computed_scaling(1.f), source_model_path(std::move(src_path)),
-		known_translation(translation[0], translation[1], translation[2], 0.0f), SPOT_BaseWrapper()
+		known_translation(translation[0], translation[1], translation[2], 0.0f), source_model(nullptr), target_model(nullptr), SPOT_BaseWrapper()
 	{
 		fmtdbg("FISTWrapperSameModel::ctor({}, mat3, vec3, {})", src_path, scale);
 		this->initialize_and_transform_models();
@@ -223,12 +223,12 @@ namespace spot_wrappers {
 
 	void FISTWrapperSameModel::initialize_and_transform_models() {
 		fmtdbg("Loading model at \"{}\" ...", this->source_model_path);
-		this->source_model = load_off_file(this->source_model_path);
-		this->target_model = Model(this->source_model);
+		this->source_model = std::make_unique<Model>(load_off_file(this->source_model_path));
+		this->target_model = std::make_unique<Model>(*this->source_model);
 		fmtdbg("Loaded and copied.", this->source_model_path);
-		this->target_model.apply_scaling(this->known_scaling);
-		this->target_model.apply_transform(this->known_transform);
-		this->target_model.apply_translation(this->known_translation);
+		this->target_model->apply_scaling(this->known_scaling);
+		this->target_model->apply_transform(this->known_transform);
+		this->target_model->apply_translation(this->known_translation);
 		fmtdbg("Applied transformation");
 	}
 
@@ -246,7 +246,7 @@ namespace spot_wrappers {
 		this->timings = sliced.fast_iterative_sliced_transport(
 			static_cast<int>(this->maximum_iterations),
 			static_cast<int>(this->maximum_directions),
-			this->source_model.positions, this->target_model.positions,
+			this->source_model->positions, this->target_model->positions,
 			rot, trans, true, scaling, std::move(this->timings)
 		);
 		this->computed_transform = glm::mat4{
@@ -261,7 +261,7 @@ namespace spot_wrappers {
 		if (enable_timings) {
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :",
-							this->source_model.positions.size(), this->target_model.positions.size()),
+							this->source_model->positions.size(), this->target_model->positions.size()),
 				"[Final transformation :]");
 		}
 	}
@@ -291,35 +291,35 @@ namespace spot_wrappers {
 	}
 
 	std::vector<Point<3, float>>& FISTWrapperSameModel::get_source_distribution() {
-		return this->source_model.positions;
+		return this->source_model->positions;
 	}
 
 	const std::vector<Point<3, float>>& FISTWrapperSameModel::get_source_distribution() const {
-		return this->source_model.positions;
+		return this->source_model->positions;
 	}
 
 	std::vector<Point<3, float>>& FISTWrapperSameModel::get_target_distribution() {
-		return this->target_model.positions;
+		return this->target_model->positions;
 	}
 
 	const std::vector<Point<3, float>>& FISTWrapperSameModel::get_target_distribution() const {
-		return this->target_model.positions;
+		return this->target_model->positions;
 	}
 
 	point_tensor_t FISTWrapperSameModel::get_source_point_cloud_py() const {
-		return point_vector_to_tensor(this->source_model.positions);
+		return point_vector_to_tensor(this->source_model->positions);
 	}
 
 	point_tensor_t FISTWrapperSameModel::get_target_point_cloud_py() const {
-		return point_vector_to_tensor(this->target_model.positions);
+		return point_vector_to_tensor(this->target_model->positions);
 	}
 
 	std::uint32_t FISTWrapperSameModel::get_source_distribution_size() const {
-		return static_cast<std::uint32_t>(this->source_model.positions.size());
+		return static_cast<std::uint32_t>(this->source_model->positions.size());
 	}
 
 	std::uint32_t FISTWrapperSameModel::get_target_distribution_size() const {
-		return static_cast<std::uint32_t>(this->target_model.positions.size());
+		return static_cast<std::uint32_t>(this->target_model->positions.size());
 	}
 	//endregion
 
@@ -328,8 +328,8 @@ namespace spot_wrappers {
 	computed_transform(glm::identity<glm::mat4>()), computed_translation({}), computed_scaling(1.0),
 	source_file_path(std::move(src_path)), target_file_path(std::move(tgt_path)),SPOT_BaseWrapper()
 	{
-		this->source_model = load_off_file(this->source_file_path);
-		this->target_model = load_off_file(this->target_file_path);
+		this->source_model = std::make_unique<Model>(load_off_file(this->source_file_path));
+		this->target_model = std::make_unique<Model>(load_off_file(this->target_file_path));
 	}
 
 	FISTWrapperDifferentModels::~FISTWrapperDifferentModels() = default;
@@ -345,7 +345,7 @@ namespace spot_wrappers {
 		this->timings = sliced.fast_iterative_sliced_transport(
 			static_cast<int>(this->maximum_iterations),
 			static_cast<int>(this->maximum_directions),
-			this->source_model.positions, this->target_model.positions,
+			this->source_model->positions, this->target_model->positions,
 			rot, trans, true, scaling, std::move(this->timings)
 		);
 		this->computed_transform = glm::mat4{
@@ -360,17 +360,17 @@ namespace spot_wrappers {
 		if (enable_timings) {
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :",
-							this->source_model.positions.size(), this->target_model.positions.size()),
+							this->source_model->positions.size(), this->target_model->positions.size()),
 				"[Final transformation :]");
 		}
 	}
 
 	point_tensor_t FISTWrapperDifferentModels::get_source_point_cloud_py() const {
-		return point_vector_to_tensor(this->source_model.positions);
+		return point_vector_to_tensor(this->source_model->positions);
 	}
 
 	point_tensor_t FISTWrapperDifferentModels::get_target_point_cloud_py() const {
-		return point_vector_to_tensor(this->target_model.positions);
+		return point_vector_to_tensor(this->target_model->positions);
 	}
 
 	glm::mat4 FISTWrapperDifferentModels::get_transform_matrix() const {
@@ -386,27 +386,27 @@ namespace spot_wrappers {
 	}
 
 	std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_source_distribution() {
-		return this->source_model.positions;
+		return this->source_model->positions;
 	}
 
 	const std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_source_distribution() const {
-		return this->source_model.positions;
+		return this->source_model->positions;
 	}
 
 	std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_target_distribution() {
-		return this->target_model.positions;
+		return this->target_model->positions;
 	}
 
 	const std::vector<Point<3, float>>& FISTWrapperDifferentModels::get_target_distribution() const {
-		return this->target_model.positions;
+		return this->target_model->positions;
 	}
 
 	std::uint32_t FISTWrapperDifferentModels::get_source_distribution_size() const {
-		return static_cast<std::uint32_t>(this->source_model.positions.size());
+		return static_cast<std::uint32_t>(this->source_model->positions.size());
 	}
 
 	std::uint32_t FISTWrapperDifferentModels::get_target_distribution_size() const {
-		return static_cast<std::uint32_t>(this->target_model.positions.size());
+		return static_cast<std::uint32_t>(this->target_model->positions.size());
 	}
 	//endregion
 

@@ -21,7 +21,7 @@ ADD_TEST(
 
 ADD_EXECUTABLE(fist_wrapper_known_transform
 	fist_wrapper_known_transform.cpp
-	)
+)
 TARGET_LINK_LIBRARIES(fist_wrapper_known_transform
 	PUBLIC spot_wrappers
 	PUBLIC pybind11::headers
