@@ -142,9 +142,9 @@ namespace spot_wrappers {
 			this->source_distribution[i][2] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
 		}
 		for (std::size_t i = 0; i < static_cast<std::size_t>(this->tgt_size); ++i) {
-			this->target_distribution[i][0] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
-			this->target_distribution[i][1] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
-			this->target_distribution[i][2] = static_cast<float>(uniform(engine) * this->point_cloud_radius);
+			this->target_distribution[i][0] = static_cast<float>((uniform(engine) + 2.0 + 2) * this->point_cloud_radius);
+			this->target_distribution[i][1] = static_cast<float>((uniform(engine) + 2.0 + 4) * this->point_cloud_radius);
+			this->target_distribution[i][2] = static_cast<float>((uniform(engine) + 2.0 + 6) * this->point_cloud_radius);
 		}
 	}
 

@@ -26,7 +26,10 @@ int main() {
 	std::vector<double> rot(9);
 	std::vector<double> trans(3);
 	double scaling;
-	sliced.fast_iterative_sliced_transport(FIST_iters, slices, model_translated.positions, model_reference.positions, rot, trans, true, scaling, true);
+	auto logger = std::make_unique<micro_benchmarks::TimingsLogger>(FIST_iters);
+	logger = sliced.fast_iterative_sliced_transport(
+		FIST_iters, slices, model_translated.positions, model_reference.positions, rot, trans, true, scaling, std::move(logger));
+	logger->print_timings("From CTest executable test_fist_translation_only", "[Results]");
 
 	std::cout << "Scale: " << scaling << std::endl;
 	fmt::print("[                                  Rotation                                  ] [        Translation       ]\n");

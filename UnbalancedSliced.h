@@ -42,9 +42,14 @@
 #include <list>
 #include <thread>
 #include <random>
+#include "Point.h"
+
+// CLANG complains about some varargs macros in CImg, ignore it :
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvarargs"
 #define cimg_display 0
 #include "CImg.h"
-#include "Point.h"
+#pragma clang diagnostic pop
 
 #ifdef _MSC_VER
   #include <intrin.h>
