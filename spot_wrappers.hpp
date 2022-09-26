@@ -13,6 +13,7 @@
 #include "UnbalancedSliced.h"
 #include "model.hpp"
 #include "glm_bridge.hpp"
+#include "fmt_bridge.hpp"
 
 #include <pybind11/attr.h>
 #include <pybind11/buffer_info.h>

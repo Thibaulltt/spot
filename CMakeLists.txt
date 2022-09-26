@@ -34,12 +34,12 @@ ENDIF()
 # Enable the compilation flags :
 ADD_COMPILE_OPTIONS(${SPOT_COMPILE_FLAGS})
 
-# Add the definitions to fmtlib :
-ADD_LIBRARY(fmt_bridge INTERFACE fmt_bridge.hpp)
-TARGET_LINK_LIBRARIES(fmt_bridge INTERFACE fmt::fmt)
 # Add the definitions to glm :
 ADD_LIBRARY(glm_bridge INTERFACE glm_bridge.hpp)
 TARGET_LINK_LIBRARIES(glm_bridge INTERFACE glm)
+# Add the definitions to fmtlib :
+ADD_LIBRARY(fmt_bridge INTERFACE fmt_bridge.hpp)
+TARGET_LINK_LIBRARIES(fmt_bridge INTERFACE fmt::fmt)
 
 ADD_SUBDIRECTORY(tests)
 

@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <numeric>
+#include <algorithm>
 
 namespace micro_benchmarks {
 
