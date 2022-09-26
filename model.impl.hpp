@@ -88,6 +88,8 @@ Model::Model(const std::vector<glm::vec3>& vertices, const std::vector<glm::uvec
 
 Model::Model(const Model& _other) = default;
 
+Model::Model(Model&& _other) noexcept : positions(std::move(_other.positions)), triangles(std::move(_other.triangles)) {}
+
 void Model::apply_transform(const glm::mat3 matrix) {
 	std::for_each(positions.begin(), positions.end(), [&](Point<3, float>& position) {
 		// Dirty : casts to glm::vec3, compute and re-cast into Point<>

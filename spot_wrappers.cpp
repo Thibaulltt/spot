@@ -213,7 +213,7 @@ namespace spot_wrappers {
 
 	void FISTWrapperSameModel::initialize_and_transform_models() {
 		fmtdbg("Loading model at \"{}\" ...", this->source_model_path);
-		this->source_model = std::make_unique<Model>(load_off_file(this->source_model_path));
+		this->source_model = std::make_unique<Model>(std::move(load_off_file(this->source_model_path)));
 		this->target_model = std::make_unique<Model>(*this->source_model);
 		fmtdbg("Loaded and copied.", this->source_model_path);
 		this->target_model->apply_scaling(this->known_scaling);

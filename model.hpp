@@ -20,6 +20,7 @@ struct Model {
 	Model();
 	Model(const std::vector<glm::vec3>& vertices, std::vector<glm::uvec3> triangles);
 	Model(const Model& _other);
+	Model(Model&& _other) noexcept;
 	~Model() = default;
 
 	/// @brief Applies a matrix transform to the positions.
