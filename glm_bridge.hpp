@@ -28,7 +28,7 @@ namespace glm {
 
 }
 
-#include <fmt/format.h>
+#include "fmt_bridge.hpp"
 
 /// @brief Template overload for fmt::formatter using the glm::bvec3 type.
 template <> struct fmt::formatter<glm::bvec3> {

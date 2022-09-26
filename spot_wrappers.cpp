@@ -1,19 +1,7 @@
 #include "./spot_wrappers.hpp"
-
-#include <fmt/std.h>
-#include <fmt/ranges.h>
+#include "./fmt_bridge.hpp"
 
 namespace spot_wrappers {
-
-	//region --- Free functions : debug utilities, converters, and environment setup ---
-	/// @brief Temporary debug function.
-	template<typename...T>
-	void fmtdbg(fmt::format_string<T...> format, T&&... args){
-		if (enable_debug) {
-			auto full_str = fmt::format("[DEBUG] {}\n", format);
-			fmt::print(full_str, args...);
-		}
-	}
 
 	void set_enable_reproducible_runs(bool _enable) {
 		fmtdbg("Modifying reproducibility to {}", _enable);

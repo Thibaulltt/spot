@@ -3,9 +3,7 @@
 //
 
 #include "./micro_benchmark.hpp"
-
-#include <fmt/core.h>
-#include <fmt/chrono.h>
+#include "fmt_bridge.hpp"
 
 #include <iostream>
 #include <numeric>

@@ -9,8 +9,9 @@
  *=============================================
  */
 
+#include "fmt_bridge.hpp"
+
 #include <boost/program_options.hpp>
-#include <fmt/core.h>
 
 namespace program_options {
 

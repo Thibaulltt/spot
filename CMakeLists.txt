@@ -34,9 +34,11 @@ ENDIF()
 # Enable the compilation flags :
 ADD_COMPILE_OPTIONS(${SPOT_COMPILE_FLAGS})
 
-ADD_LIBRARY(glm_bridge INTERFACE
-	glm_bridge.hpp
-)
+# Add the definitions to fmtlib :
+ADD_LIBRARY(fmt_bridge INTERFACE fmt_bridge.hpp)
+TARGET_LINK_LIBRARIES(fmt_bridge INTERFACE fmt::fmt)
+# Add the definitions to glm :
+ADD_LIBRARY(glm_bridge INTERFACE glm_bridge.hpp)
 TARGET_LINK_LIBRARIES(glm_bridge INTERFACE glm)
 
 ADD_SUBDIRECTORY(tests)
@@ -50,7 +52,7 @@ ADD_EXECUTABLE(FIST
 )
 TARGET_LINK_LIBRARIES(FIST
 	PUBLIC OpenMP::OpenMP_CXX
-	PUBLIC fmt::fmt
+	PUBLIC fmt_bridge
 	PUBLIC glm_bridge
 	PUBLIC Boost::program_options
 )
@@ -61,7 +63,7 @@ ADD_EXECUTABLE(colorTransfer
 )
 TARGET_LINK_LIBRARIES(colorTransfer
 	PUBLIC OpenMP::OpenMP_CXX
-	PUBLIC fmt::fmt
+	PUBLIC fmt_bridge
 )
 
 ADD_LIBRARY(spot_wrappers SHARED
@@ -72,11 +74,10 @@ ADD_LIBRARY(spot_wrappers SHARED
 )
 TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC OpenMP::OpenMP_CXX
-	PUBLIC fmt::fmt
+	PUBLIC fmt_bridge
 	PUBLIC glm_bridge
 	PUBLIC pybind11::pybind11
 )
-#SET_TARGET_PROPERTIES(spot_wrappers PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 pybind11_add_module(spot spot_wrappers_python_interface.cpp)
 TARGET_LINK_LIBRARIES(spot

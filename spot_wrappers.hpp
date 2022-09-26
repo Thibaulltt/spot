@@ -19,13 +19,16 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
+#if defined(__GNUC__) || defined(__clang__)
+#	define SPOT_EXPORT __attribute__((visibility ("default")))
+#else
+#	define SPOT_EXPORT
+#endif
+
 #include <vector>
 
 /// @brief This namespace englobes some wrappers around the SPOT method, in order to benchmark it.
 namespace spot_wrappers {
-
-	/// @brief Enables or disables debug messages in fmtdbg()
-	constexpr bool enable_debug = true;
 
 	/// @brief Simple typedef to an array type containing the points' data.
 	using point_tensor_t = pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast>;

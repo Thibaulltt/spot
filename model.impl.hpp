@@ -1,6 +1,6 @@
+#include "fmt_bridge.hpp"
+
 #include <fstream>
-#include <fmt/core.h>
-#include <fmt/color.h>
 #include <iostream>
 #include <algorithm>
 #include <functional>
