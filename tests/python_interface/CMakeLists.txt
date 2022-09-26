@@ -22,6 +22,7 @@ MACRO(add_python_interface_test_single_file test_name)
 ENDMACRO()
 
 add_python_interface_test_single_file(fist_wrapper_check_existence)
+add_python_interface_test_single_file(fist_wrapper_check_transform)
 add_python_interface_test_single_file(fist_wrapper_known_transform)
 add_python_interface_test_single_file(fist_wrapper_random_distributions)
 

@@ -51,7 +51,7 @@ namespace spot_wrappers {
 
 	/// @brief Base class for the wrappers around the FIST method.
 	/// @note This class is not meant to be created directly. Its sub-classes are.
-	class FIST_BaseWrapper {
+	class SPOT_EXPORT FIST_BaseWrapper {
 	protected:
 		/// @brief Default ctor for the base wrapper class.
 		FIST_BaseWrapper();
@@ -62,50 +62,50 @@ namespace spot_wrappers {
 
 		/// @brief Launches the FIST method.
 		/// @param enable_timings Whether to enable benchmark timings for the current run.
-		virtual void SPOT_EXPORT compute_transformation(bool enable_timings = false) = 0;
+		virtual void compute_transformation(bool enable_timings = false) = 0;
 
 		/// @brief Gets the source distribution data.
-		point_tensor_t SPOT_EXPORT get_source_point_cloud_py() const;
+		point_tensor_t get_source_point_cloud_py() const;
 		/// @brief Gets the target distribution data.
-		point_tensor_t SPOT_EXPORT get_target_point_cloud_py() const;
+		point_tensor_t get_target_point_cloud_py() const;
 
 		/// @brief Returns a reference to the source distribution.
-		virtual std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() = 0;
+		virtual std::vector<Point<3, float>>& get_source_distribution() = 0;
 		/// @brief Returns a const reference to the source distribution.
-		virtual const std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() const = 0;
+		virtual const std::vector<Point<3, float>>& get_source_distribution() const = 0;
 		/// @brief Returns a reference to the target distribution.
-		virtual std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() = 0;
+		virtual std::vector<Point<3, float>>& get_target_distribution() = 0;
 		/// @brief Returns a const reference to the target distribution.
-		virtual const std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() const = 0;
+		virtual const std::vector<Point<3, float>>& get_target_distribution() const = 0;
 
 		/// @brief Returns the size of the source distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t SPOT_EXPORT get_source_distribution_size() const;
+		std::uint32_t get_source_distribution_size() const;
 		/// @brief Returns the size of the target distribution. Used for information in Python's ``__repr__`` function.
-		std::uint32_t SPOT_EXPORT get_target_distribution_size() const;
+		std::uint32_t get_target_distribution_size() const;
 
 		/// @brief Gets the total running time of the method.
 		/// @returns The sum of all lap times for the last run of the SPOT method, or 0 if no timer was previously used.
-		double SPOT_EXPORT get_total_running_time() const;
+		double get_total_running_time() const;
 		/// @brief Gets the time that a specific iteration lasted for.
 		/// @param lap_number The lap number to ask for. If over the number of laps, returns 0.
 		/// @returns The running time of the `lap_number` lap, or 0 if the timer hasn't been used.
-		double SPOT_EXPORT get_running_time(std::uint32_t lap_number) const;
+		double get_running_time(std::uint32_t lap_number) const;
 
 		/// @brief Prints the timings computed, if available.
-		void SPOT_EXPORT print_timings(const char* message, const char* prefix) const;
+		void print_timings(const char* message, const char* prefix) const;
 
 		/// @brief Sets the new maximum number of iterations available for registrations.
-		void SPOT_EXPORT set_maximum_iterations(std::uint32_t new_iterations_max);
+		void set_maximum_iterations(std::uint32_t new_iterations_max);
 		/// @brief Sets the new maximum number of directions evaluated at each iteration of the registration.
-		void SPOT_EXPORT set_maximum_directions(std::uint32_t new_directions_max);
+		void set_maximum_directions(std::uint32_t new_directions_max);
 
 		/// @brief Gets the currently computed rotation/scale matrix.
 		/// @returns Either a identity matrix if it has not been computed, or the computed matrix.
-		glm::mat4 SPOT_EXPORT get_computed_matrix() const;
+		glm::mat4 get_computed_matrix() const;
 		/// @brief Gets the currently computed translation.
-		glm::vec4 SPOT_EXPORT get_computed_translation() const;
+		glm::vec4 get_computed_translation() const;
 		/// @brief Returns the computed scaling parameter if requested.
-		double SPOT_EXPORT get_computed_scaling() const;
+		double get_computed_scaling() const;
 
 	protected:
 		std::unique_ptr<micro_benchmarks::TimingsLogger> timings; ///< The benchmark logger, to keep track of the execution times.
@@ -119,7 +119,7 @@ namespace spot_wrappers {
 	};
 
 	/// @brief This wrapper for the FIST method generates random point clouds and registers them.
-	class FISTWrapperRandomModels : public FIST_BaseWrapper {
+	class SPOT_EXPORT FISTWrapperRandomModels : public FIST_BaseWrapper {
 	public:
 		/// @brief Ctor for a FIST wrapper registering two random point clouds.
 		FISTWrapperRandomModels(std::uint32_t src_distrib_size, std::uint32_t tgt_distrib_size, double radius);
@@ -127,16 +127,16 @@ namespace spot_wrappers {
 		~FISTWrapperRandomModels() override;
 
 		/// @brief Computes the transformation between the two random point clouds.
-		void SPOT_EXPORT compute_transformation(bool enable_timings) override;
+		void compute_transformation(bool enable_timings) override;
 
 		/// @brief Returns the source distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() override;
+		std::vector<Point<3, float>>& get_source_distribution() override;
 		/// @brief Returns the source distribution, as a const reference.
-		const std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() const override;
+		const std::vector<Point<3, float>>& get_source_distribution() const override;
 		/// @brief Returns the target distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() override;
+		std::vector<Point<3, float>>& get_target_distribution() override;
 		/// @brief Returns the target distribution, as a const reference.
-		const std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() const override;
+		const std::vector<Point<3, float>>& get_target_distribution() const override;
 
 	protected:
 		std::uint32_t src_size;
@@ -148,7 +148,7 @@ namespace spot_wrappers {
 	};
 
 	/// @brief This wrapper for the FIST method loads a model, copies it, and applies a known transform before registering them.
-	class FISTWrapperSameModel : public FIST_BaseWrapper {
+	class SPOT_EXPORT FISTWrapperSameModel : public FIST_BaseWrapper {
 	public:
 		/// @brief Creates a FIST wrapper registering a model to its copy transformed with a random (rigid) transform.
 		/// @param src_path The source path to the file to load.
@@ -170,23 +170,23 @@ namespace spot_wrappers {
 		~FISTWrapperSameModel() override;
 
 		/// @brief Computes the transformation between the source and transformed model.
-		void SPOT_EXPORT compute_transformation(bool enable_timings = false) override;
+		void compute_transformation(bool enable_timings = false) override;
 
 		/// @brief Returns the previously-applied matrix.
-		glm::mat4 SPOT_EXPORT get_known_matrix() const;
+		glm::mat4 get_known_matrix() const;
 		/// @brief Returns the previously-applied translation.
-		glm::vec4 SPOT_EXPORT get_known_translation() const;
+		glm::vec4 get_known_translation() const;
 		/// @brief Returns the previously-applied scale factor.
-		double SPOT_EXPORT get_known_scaling() const;
+		double get_known_scaling() const;
 
 		/// @brief Returns the source distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() override;
+		std::vector<Point<3, float>>& get_source_distribution() override;
 		/// @brief Returns the source distribution, as a const reference.
-		const std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() const override;
+		const std::vector<Point<3, float>>& get_source_distribution() const override;
 		/// @brief Returns the target distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() override;
+		std::vector<Point<3, float>>& get_target_distribution() override;
 		/// @brief Returns the target distribution, as a const reference.
-		const std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() const override;
+		const std::vector<Point<3, float>>& get_target_distribution() const override;
 
 	private:
 		/// @brief Loads the model, and transforms the "target" with the known transform.
@@ -204,7 +204,7 @@ namespace spot_wrappers {
 	};
 
 	/// @brief This wrapper for the FIST method loads two different models and registers them together.
-	class FISTWrapperDifferentModels : public FIST_BaseWrapper {
+	class SPOT_EXPORT FISTWrapperDifferentModels : public FIST_BaseWrapper {
 	public:
 		/// @brief Default ctor. Initializes both models to load.
 		FISTWrapperDifferentModels(std::string, std::string);
@@ -212,16 +212,16 @@ namespace spot_wrappers {
 		~FISTWrapperDifferentModels() override;
 
 		/// @brief Computes the transformation between the two models.
-		void SPOT_EXPORT compute_transformation(bool enable_timings = false) override;
+		void compute_transformation(bool enable_timings = false) override;
 
 		/// @brief Returns the source distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() override;
+		std::vector<Point<3, float>>& get_source_distribution() override;
 		/// @brief Returns the source distribution, as a const reference.
-		const std::vector<Point<3, float>>& SPOT_EXPORT get_source_distribution() const override;
+		const std::vector<Point<3, float>>& get_source_distribution() const override;
 		/// @brief Returns the target distribution, as a modifiable vector.
-		std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() override;
+		std::vector<Point<3, float>>& get_target_distribution() override;
 		/// @brief Returns the target distribution, as a const reference.
-		const std::vector<Point<3, float>>& SPOT_EXPORT get_target_distribution() const override;
+		const std::vector<Point<3, float>>& get_target_distribution() const override;
 
 	protected:
 		const std::string source_file_path;

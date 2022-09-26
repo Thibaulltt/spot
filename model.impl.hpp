@@ -100,11 +100,9 @@ void Model::apply_transform(const glm::mat3 matrix) {
 
 void Model::apply_translation(const glm::vec3 translate) {
 	Point<3, float> t{translate};
-	std::for_each(this->positions.begin(), this->positions.end(),
-		[t](Point<3, float> const& p) {
-			return p + t;
-		}
-	);
+	for (auto& p : this->positions) {
+		p = p + t;
+	}
 }
 
 void Model::apply_scaling(double scaling = 1.0, bool center_before_scaling = true) {

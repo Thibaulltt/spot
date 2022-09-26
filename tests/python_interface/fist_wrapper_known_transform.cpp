@@ -22,13 +22,13 @@ int main(int argc, char* argv[]) {
 		glm::all(glm::epsilonEqual(glm::identity<glm::mat4>()[2], extracted_transform[2], epsilon_precision)),
 		glm::all(glm::epsilonEqual(glm::identity<glm::mat4>()[3], extracted_transform[3], epsilon_precision))
 	));
-	bool translate_close = glm::all(glm::epsilonEqual(extracted_translation, extracted_translation, epsilon_precision));
+	bool translate_close = glm::all(glm::epsilonEqual(translation, extracted_translation, epsilon_precision));
 
 	fmt::print("Matrix extracted (should be close to id(4)) :\n");
 	fmt::print("{}\n", extracted_transform);
-	fmt::print("Applied translation :\n");
-	fmt::print("{}\n", translation);
-	fmt::print("Computed translation :\n");
-	fmt::print("{}\n", extracted_translation);
+	fmt::print("Applied translation  : {}\n", translation);
+	fmt::print("Computed translation : {}\n", extracted_translation);
+	fmt::print("Difference           : {}\n", glm::abs(translation - extracted_translation));
+	fmt::print("matrix_close && translate_close --> {} && {}\n", matrix_close, translate_close);
 	return (matrix_close && translate_close) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

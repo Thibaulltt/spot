@@ -13,6 +13,7 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <fmt/chrono.h>
+#include <fmt/std.h>
 
 #include "glm_bridge.hpp"
 
@@ -53,19 +54,32 @@ template <> struct fmt::formatter<glm::mat4> {
 	template <typename FormatContext>
 	auto format(const glm::mat4& m, FormatContext& ctx) const -> decltype(ctx.out()) {
 		return fmt::format_to(ctx.out(),
-							  "[[{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}],\n"
-							  " [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]\n"
-							  " [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]\n"
-							  " [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]]",
-							  m[0][0], m[0][1], m[0][2], m[0][3],
-							  m[1][0], m[1][1], m[1][2], m[1][3],
-							  m[2][0], m[2][1], m[2][2], m[2][3],
-							  m[3][0], m[3][1], m[3][2], m[3][3]);
+			"[[{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}],\n"
+			" [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]\n"
+			" [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]\n"
+			" [{: >10.6f} {: >10.6f} {: >10.6f} {: >10.6f}]]",
+			m[0][0], m[0][1], m[0][2], m[0][3],
+			m[1][0], m[1][1], m[1][2], m[1][3],
+			m[2][0], m[2][1], m[2][2], m[2][3],
+			m[3][0], m[3][1], m[3][2], m[3][3]);
+	}
+};
+
+template <> struct fmt::formatter<glm::vec3> {
+	/// @brief Parses format specifications. No-op in the case of glm::vec3.
+	constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+		return ctx.end();
+	}
+
+	/// @brief Formats the vector given the length of it, and the internal data type.
+	template <typename FormatContext>
+	auto format(const glm::vec3& v, FormatContext& ctx) const -> decltype(ctx.out()) {
+		return fmt::format_to(ctx.out(), "[{} {} {}]", v[0], v[1], v[2]);
 	}
 };
 
 template <> struct fmt::formatter<glm::vec4> {
-	/// @brief Parses format specifications. No-op in the case of glm::bvec3.
+	/// @brief Parses format specifications. No-op in the case of glm::vec4.
 	constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
 		return ctx.end();
 	}

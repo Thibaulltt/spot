@@ -161,7 +161,7 @@ namespace spot_wrappers {
 		};
 		this->computed_translation = glm::vec4(trans[0], trans[1], trans[2], 0.0f);
 		this->computed_scaling = scaling;
-		fmt::print("Registration done.");
+		fmt::print("Registration done.\n");
 		if (enable_timings) {
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :", this->src_size, this->tgt_size),
@@ -214,7 +214,7 @@ namespace spot_wrappers {
 	void FISTWrapperSameModel::initialize_and_transform_models() {
 		fmtdbg("Loading model at \"{}\" ...", this->source_model_path);
 		this->source_model = std::make_unique<Model>(std::move(load_off_file(this->source_model_path)));
-		this->target_model = std::make_unique<Model>(*this->source_model);
+		this->target_model = std::make_unique<Model>(std::cref(*this->source_model)); // cref -> allows to force copy instead of move ?
 		fmtdbg("Loaded and copied.", this->source_model_path);
 		this->target_model->apply_scaling(this->known_scaling);
 		this->target_model->apply_transform(this->known_transform);
@@ -249,7 +249,7 @@ namespace spot_wrappers {
 		fmtdbg("Final translation : {}", trans);
 		this->computed_translation = glm::vec4(trans[0], trans[1], trans[2], 0.0f);
 		this->computed_scaling = scaling;
-		fmt::print("Registration done.");
+		fmt::print("Registration done.\n");
 		if (enable_timings) {
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :",
@@ -319,7 +319,7 @@ namespace spot_wrappers {
 		};
 		this->computed_translation = glm::vec4(trans[0], trans[1], trans[2], 0.0f);
 		this->computed_scaling = scaling;
-		fmt::print("Registration done.");
+		fmt::print("Registration done.\n");
 		if (enable_timings) {
 			this->timings->print_timings(
 				fmt::format("After registering {} to {} points, transformation is :",
