@@ -4,6 +4,7 @@
 
 #include "../../fmt_bridge.hpp"
 #include "../../model.hpp"
+#include "../path_setup.hpp"
 
 constexpr float max_fp32_tolerance = 1e-6;
 

@@ -1,0 +1,19 @@
+#ifndef SPOT_TESTS_PATH_SETUP_HPP_
+#define SPOT_TESTS_PATH_SETUP_HPP_
+
+#include <string>
+
+std::string get_path_to_test_files(std::string relative_path = "") {
+	std::string base_path = "@SPOT_BASE_TEST_DIR@";
+	if (relative_path.empty()) {
+		return base_path;
+	} else {
+		if (base_path[base_path.size()-1] != '/') {
+			return base_path + "/" + relative_path;
+		} else {
+			return base_path + relative_path;
+		}
+	}
+}
+
+#endif //SPOT_TESTS_PATH_SETUP_HPP_

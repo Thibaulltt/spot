@@ -3,14 +3,15 @@
 //
 
 #include "../../spot_wrappers.hpp"
+#include "../path_setup.hpp"
 
 int main(int argc, char* argv[]) {
 
 	spot_wrappers::FISTWrapperRandomModels random_points(700, 1000, 1.0);
-	spot_wrappers::FISTWrapperSameModel same_model("/home/thibault/Documents/miccai/durand_export/meshmand.off");
+	spot_wrappers::FISTWrapperSameModel same_model(get_path_to_test_files("Datasets/models/bunny.off"));
 	spot_wrappers::FISTWrapperDifferentModels different_models(
-		"/home/thibault/Documents/miccai/durand_export/meshmand.off",
-		"/home/thibault/Documents/miccai/durand_export/fib.off"
+		get_path_to_test_files("Datasets/models/bunny.off"),
+		get_path_to_test_files("Datasets/models/triceratops.off")
 	);
 
 	return EXIT_SUCCESS;

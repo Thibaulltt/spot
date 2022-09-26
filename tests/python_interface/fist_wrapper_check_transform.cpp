@@ -4,6 +4,7 @@
 
 #include "../../spot_wrappers.hpp"
 #include "../../fmt_bridge.hpp"
+#include "../path_setup.hpp"
 
 int main(int argc, char* argv[]) {
 	constexpr glm::vec4::value_type factor = 15.0;
@@ -11,7 +12,7 @@ int main(int argc, char* argv[]) {
 
 	glm::vec3 total_difference{}; // The difference computed for all vertices of the distributions
 	glm::vec4 translation(uniform(engine) * factor, uniform(engine) * factor, uniform(engine) * factor, 0.0f);
-	spot_wrappers::FISTWrapperSameModel model("/home/thib/Documents/data/medmax/meshes/Test/bunny.off", glm::identity<glm::mat4>(), translation);
+	spot_wrappers::FISTWrapperSameModel model(get_path_to_test_files("Datasets/models/bunny.off"), glm::identity<glm::mat4>(), translation);
 
 	auto source = model.get_source_distribution();
 	auto target = model.get_target_distribution();

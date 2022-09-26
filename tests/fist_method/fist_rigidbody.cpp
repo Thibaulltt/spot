@@ -5,6 +5,7 @@
 
 #include "../../UnbalancedSliced.h" // FIXME : If we include this header below model.hpp, causes ADL/named argument lookup failure on memset()
 #include "../../model.hpp"
+#include "../path_setup.hpp"
 
 int main() {
 	omp_set_nested(0);
@@ -14,7 +15,7 @@ int main() {
 	UnbalancedSliced sliced;
 
 	// Load models :
-	auto model_reference = load_off_file("/home/thib/Documents/data/medmax/meshes/Test/bunny.off");
+	auto model_reference = load_off_file(get_path_to_test_files("Datasets/models/bunny.off"));
 	auto model_translated = Model(model_reference);
 	glm::vec3 random_translation = glm::sphericalRand(1.0f);
 	glm::vec3 random_axis = glm::normalize(glm::sphericalRand(1.0f));

@@ -5,6 +5,7 @@
 
 #include "../../UnbalancedSliced.h"
 #include "../../model.hpp"
+#include "../path_setup.hpp"
 
 #include <glm/gtx/io.hpp>
 
@@ -16,7 +17,7 @@ int main() {
 	UnbalancedSliced sliced;
 
 	// Load models :
-	auto model_reference = load_off_file("/home/thib/Documents/data/medmax/meshes/Test/bunny.off");
+	auto model_reference = load_off_file(get_path_to_test_files("Datasets/models/bunny.off"));
 	auto model_translated = Model(model_reference);
 	glm::vec3 random_translation = glm::sphericalRand(1.0f);
 	std::cout << "Applying translation on " << model_reference.positions.size() << " vertices  : " << random_translation << '\n';

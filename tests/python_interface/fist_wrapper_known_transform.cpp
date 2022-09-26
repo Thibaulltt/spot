@@ -4,12 +4,13 @@
 //
 
 #include "../../spot_wrappers.hpp"
+#include "../path_setup.hpp"
 
 int main(int argc, char* argv[]) {
 	constexpr glm::vec4::value_type factor = 15.0;
 	glm::vec4 translation(uniform(engine) * factor, uniform(engine) * factor, uniform(engine) * factor, 0.0f);
 
-	spot_wrappers::FISTWrapperSameModel known_transform("/home/thib/Documents/data/medmax/meshes/Test/bunny.off", glm::identity<glm::mat4>(),translation);
+	spot_wrappers::FISTWrapperSameModel known_transform(get_path_to_test_files("Datasets/models/bunny.off"), glm::identity<glm::mat4>(),translation);
 	known_transform.compute_transformation(true);
 
 	glm::mat4 extracted_transform = known_transform.get_computed_matrix();
