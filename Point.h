@@ -28,7 +28,7 @@
 */
 #pragma once
 
-#include <glm/glm.hpp>
+#include "glm_bridge.hpp"
 
 /// @brief Simple many-dimensional sample representation.
 /// @tparam DIM The dimensionality of the samples.
@@ -42,9 +42,9 @@ public:
 	}
 
 	template <glm::qualifier precision>
-	explicit Point<DIM, T>(glm::vec<DIM, T, precision> vec) {
+	explicit Point<DIM, T>(glm::vec<DIM, T, precision> vec) : Point() {
 		for (int i = 0; i < DIM; i++) {
-			coords[i] = vec[i];
+			this->coords[i] = vec[i];
 		}
 	}
 

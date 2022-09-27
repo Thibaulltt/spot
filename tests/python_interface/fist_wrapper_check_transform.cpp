@@ -16,18 +16,30 @@ int main(int argc, char* argv[]) {
 
 	auto source = model.get_source_distribution();
 	auto target = model.get_target_distribution();
-	using index_t = decltype(source)::size_type;
+	using index_t = decltype(source)::size_type; // aka vector<>::size_type
 
 	fmtdbg("Starting difference : {}", total_difference);
-	for (index_t i = 0; i < source.size(); ++i) {
-		auto local_difference = source[i] - target[i];
-		total_difference += glm::abs(glm::to_vec(local_difference));
+	for (index_t i = 0; i < source.size();) {
+		glm::vec3 temp_difference = glm::vec3{};
+		index_t j = i;
+		for (; j < i+1000 && j < source.size(); ++j) {
+			auto local_difference = target[j] - source[j];
+//			fmtdbg("Difference : [{: > 10.8f}] ==> [{:b}]",
+//				glm::to_vec(local_difference),
+//				glm::epsilonEqual(glm::vec4{glm::to_vec(local_difference), 0.0}, translation, epsilon_acceptable)
+//			);
+			temp_difference += glm::to_vec(local_difference);
+		}
+		fmtdbg("For {: >4d} vectors, mean translation was {: > 10.8f}", j-i, temp_difference / static_cast<float>(j-i));
+		i = j;
+		temp_difference /= static_cast<float>(source.size());
+		total_difference += temp_difference;
 	}
-	fmtdbg("Total un-divided difference : {}\n", total_difference);
-	total_difference /= static_cast<float>(source.size());
+	fmtdbg("Total un-divided difference : [{: > 10.8f}]\n", total_difference);
 
-	fmt::print("Expected translation : {}", translation);
-	fmt::print("Computed translation : {}", total_difference);
+	fmt::print("Expected translation : [{: > 10.8f}]\n", translation);
+	fmt::print("Computed translation : [{: > 10.8f}]\n", total_difference);
+	fmt::print("Difference           : [{: > 10.8f}]\n", translation - glm::vec4{total_difference, 0.0f});
 
 	return glm::all(glm::epsilonEqual(glm::vec4(total_difference, 0.0f), translation, epsilon_acceptable)) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

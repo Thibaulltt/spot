@@ -17,6 +17,8 @@ IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Release)
 	MESSAGE(STATUS "Enabled testing.")
 	ENABLE_TESTING()
 ENDIF()
+
+# Find required packages :
 FIND_PACKAGE(OpenMP REQUIRED)
 FIND_PACKAGE(fmt REQUIRED)
 FIND_PACKAGE(glm REQUIRED)
@@ -80,6 +82,4 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 )
 
 pybind11_add_module(spot spot_wrappers_python_interface.cpp)
-TARGET_LINK_LIBRARIES(spot
-	PRIVATE spot_wrappers
-)
+TARGET_LINK_LIBRARIES(spot PRIVATE spot_wrappers)
