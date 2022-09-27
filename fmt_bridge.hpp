@@ -54,16 +54,16 @@ struct fmt::formatter<glm::vec<L_vector, T_vector, Q_vector>> {
 			return ctx.end();
 		}
 		// find end of format specifier range :
-		while (*end != '}' && end != iterator) { end--; }
+		while (*iterator != '}' && iterator != end) { iterator++; }
 		// If no format specifier is given :
-		if (iterator == end) {
+		if (ctx.begin() == iterator) {
 			format_specifier = std::experimental::string_view{nullptr, 0};
 		} else {
 			// Fill fields for later use :
-			format_specifier = {&*iterator, fmt::detail::to_unsigned(end - iterator)};
+			format_specifier = {&*ctx.begin(), fmt::detail::to_unsigned(iterator - ctx.begin())};
 		}
 		// Return the iterator at the end of the formatting range :
-		return end;
+		return iterator;
 	}
 
 	/// @brief Formats the glm::vec<> type with the right format specifier.
@@ -163,16 +163,16 @@ struct fmt::formatter<glm::mat<C_matrix, R_matrix, T_matrix, Q_matrix>> {
 			return ctx.end();
 		}
 		// find end of format specifier range :
-		while (*end != '}' && end != iterator) { end--; }
+		while (*iterator != '}' && iterator != end) { iterator++; }
 		// If no format specifier is given :
-		if (iterator == end) {
+		if (ctx.begin() == iterator) {
 			format_specifier = std::experimental::string_view{nullptr, 0};
 		} else {
 			// Fill fields for later use :
-			format_specifier = {&*iterator, fmt::detail::to_unsigned(end - iterator)};
+			format_specifier = {&*ctx.begin(), fmt::detail::to_unsigned(iterator - ctx.begin())};
 		}
 		// Return the iterator at the end of the formatting range :
-		return end;
+		return iterator;
 	}
 
 	/// @brief Formats the glm::vec<> type with the right format specifier.
