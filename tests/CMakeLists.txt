@@ -27,7 +27,7 @@ MACRO(add_python_interface_test_single_file test_name)
 	)
 ENDMACRO()
 
-ADD_SUBDIRECTORY(fist_method)      # Tests the FIST method itself, using the 'raw' classes.
-ADD_SUBDIRECTORY(models)           # Tests the model class and its functions.
 ADD_SUBDIRECTORY(spot_wrappers)    # Tests the SPOT wrappers (C++ side).
+ADD_SUBDIRECTORY(models)           # Tests the model class and its functions.
+ADD_SUBDIRECTORY(fist_method)      # Tests the FIST method itself, using the 'raw' classes.
 #ADD_SUBDIRECTORY(python_interface) # Tests the Python interface to the SPOT wrappers.
