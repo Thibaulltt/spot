@@ -136,7 +136,7 @@ Point<DIM, T> operator-(const Point<DIM, T> &p, const Point<DIM, T> &q) {
 namespace glm {
 
 	template<int DIM, typename T>
-	vec<DIM, T, highp> to_vec(Point<DIM, T> const& p){
+	vec<DIM, T, defaultp> to_vec(Point<DIM, T> const& p){
 		vec<DIM, T, highp> r{};
 		for (int i = 0; i < DIM; ++i) {
 			r[i] = p[i];

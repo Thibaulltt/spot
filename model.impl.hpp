@@ -91,7 +91,7 @@ Model::Model(const Model& _other) = default;
 Model::Model(Model&& _other) noexcept : positions(std::move(_other.positions)), triangles(std::move(_other.triangles)) {}
 
 void Model::apply_transform(const glm::mat3 matrix) {
-	std::for_each(positions.begin(), positions.end(), [&](Point<3, float>& position) {
+	std::for_each(positions.begin(), positions.end(), [&matrix](Point<3, float>& position) {
 		// Dirty : casts to glm::vec3, compute and re-cast into Point<>
 		glm::vec3 glm_pos{position[0], position[1], position[2]};
 		position = Point<3, float>(glm_pos * matrix);
@@ -101,7 +101,7 @@ void Model::apply_transform(const glm::mat3 matrix) {
 void Model::apply_translation(const glm::vec3 translate) {
 	Point<3, float> t{translate};
 	for (auto& p : this->positions) {
-		p = p + t;
+		p += t;
 	}
 }
 
