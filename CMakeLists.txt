@@ -5,9 +5,10 @@ PROJECT(spot
 	LANGUAGES C CXX
 )
 
+INCLUDE(GNUInstallDirs) # Needed for default CMAKE_INSTALL_*DIR variables
+
 # Only use C++11, and export compile commands :
 SET(CMAKE_CXX_STANDARD 14)
-
 
 MESSAGE(STATUS "This can only compile on macOS or Linux.")
 MESSAGE(STATUS "Use the Visual Studio pre-packaged solutions otherwise.")
@@ -83,3 +84,8 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 
 pybind11_add_module(spot spot_wrappers_python_interface.cpp)
 TARGET_LINK_LIBRARIES(spot PRIVATE spot_wrappers)
+
+INSTALL(
+	TARGETS spot
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/spot
+)
