@@ -113,6 +113,7 @@ void Model::apply_scaling(double scaling = 1.0, bool center_before_scaling = tru
 				center += p;
 			}
 		);
+		center /= static_cast<float>(this->positions.size());
 		this->apply_translation(glm::to_vec(-center));
 	}
 

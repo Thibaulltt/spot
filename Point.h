@@ -74,10 +74,16 @@ public:
 		}
 		return true;
 	}
+	Point<DIM, T> operator/=(const T& divider) {
+		for (int i = 0; i < DIM; ++i) {
+			coords[i] /= divider;
+		}
+		return *this;
+	}
 	Point<DIM, T> operator-() {
 		Point<DIM, T> ret;
 		for (int i = 0; i < DIM; ++i) {
-			ret[i] = -this->operator[](i);
+			ret[i] = -(*this)[i];
 		}
 		return ret;
 	}
