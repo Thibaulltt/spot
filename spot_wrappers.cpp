@@ -86,6 +86,15 @@ namespace spot_wrappers {
 		} else return 0.0;
 	}
 
+	const micro_benchmarks::TimingsLogger FIST_BaseWrapper::get_timings() const {
+		if (this->timings) {
+			micro_benchmarks::TimingsLogger benchmarks = *(this->timings);
+			return {benchmarks};
+		} else {
+			return {0};
+		}
+	}
+
 	void FIST_BaseWrapper::print_timings(const char* message, const char* prefix) const {
 		if (this->timings) {
 			this->timings->print_timings(message, prefix);

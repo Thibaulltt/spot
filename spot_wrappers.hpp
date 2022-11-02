@@ -91,6 +91,8 @@ namespace spot_wrappers {
 		/// @returns The running time of the `lap_number` lap, or 0 if the timer hasn't been used.
 		double get_running_time(std::uint32_t lap_number) const;
 
+		/// @brief Returns the timings computed, if available.
+		const micro_benchmarks::TimingsLogger get_timings() const;
 		/// @brief Prints the timings computed, if available.
 		void print_timings(const char* message, const char* prefix) const;
 
@@ -254,7 +256,7 @@ auto define_glm_type_matrix(glm::mat<C, R, T, Q> const& matrix_ctad, const std::
 				sizeof(T), 									/* Size of one scalar */
 				pybind11::format_descriptor<T>::format(),	/* Python struct-style format descriptor */
 				2, 											/* Number of dimensions */
-				{ R, C }, 									/* Buffer dimensions */
+				{ C, R }, 									/* Buffer dimensions */
 				{ sizeof(T) * R, sizeof(T) } 				/* Strides in bytes for each index */
 			);
 		})
@@ -290,6 +292,26 @@ auto define_glm_type_vector(glm::vec<L, T, Q> const& vec_ctad, const std::string
 		.def("__repr__", [](const glm::vec<L, T, Q>& v) {
 			return fmt::format("<interface to glm::vec{}>", L);
 		});
+}
+
+/// @brief Declares a Point type that can be used within Python using pybind11's primitives.
+template <typename T, int DIM>
+auto define_spot_point_type(const std::string& type_name, pybind11::module_& m) {
+	return pybind11::class_<Point<DIM, T>>(m, type_name.c_str(), pybind11::buffer_protocol())
+		.def(pybind11::init<>(), pybind11::doc("Initializes an empty (0-coordinates) point."))
+		.def_buffer([](Point<DIM, T>& point) -> pybind11::buffer_info {
+			/* Constructor requirements : (a) Data, (b) size of one scalar and (c) format descriptor (Python-like struct) (d) dimensions, */
+			/* (e) size of each dimension, and (f) strides for each index. */
+			return {
+				/* a */	point.get(),
+				/* b */	sizeof(T),
+				/* c */	pybind11::format_descriptor<T>::format(),
+				/* d */	1,
+				/* e */	{ DIM },
+				/* f */	{ sizeof(T) }
+			};
+		})
+		.doc() = fmt::format("A Python wrapper around a {}-dimensional point.", DIM);
 }
 
 #endif //SPOT__SPOT_WRAPPERS_HPP_
