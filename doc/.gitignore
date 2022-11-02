@@ -1,0 +1,4 @@
+html/
+latex/
+man/
+./[^d][a-zA-Z]*.*
