@@ -18,7 +18,8 @@ namespace micro_benchmarks {
 		mean(no_time_coarse), min(no_time_coarse), max(no_time_coarse),
 		variance(no_time_coarse), std_dev(no_time_coarse),
 		quartile_1(no_time), median(no_time), quartile_3(no_time),
-		percentile_90(no_time), percentile_95(no_time), percentile_99(no_time)
+		percentile_90(no_time), percentile_95(no_time), percentile_99(no_time),
+		total_running_time(no_time_coarse)
 	{}
 
 	// If nothing's given, preallocate 1000 spots.

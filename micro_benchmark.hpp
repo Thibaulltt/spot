@@ -48,7 +48,7 @@ namespace micro_benchmarks {
 
 		explicit TimingsLogger(unsigned int pre_allocated_laps);
 
-		TimingsLogger(const TimingsLogger &) = delete;
+		TimingsLogger(const TimingsLogger &) = default;
 
 		TimingsLogger(TimingsLogger &&) = delete;
 
