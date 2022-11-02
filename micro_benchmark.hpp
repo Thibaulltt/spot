@@ -50,7 +50,7 @@ namespace micro_benchmarks {
 
 		TimingsLogger(const TimingsLogger &) = default;
 
-		TimingsLogger(TimingsLogger &&) = delete;
+		TimingsLogger(TimingsLogger &&) = default;
 
 		~TimingsLogger() = default;
 

@@ -33,6 +33,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <utility>
 #include <chrono>
 #include <ctime>
@@ -972,7 +973,8 @@ public:
 			std::vector<double> &transformation_translation,
 			bool useScaling,
 			double &scaling,
-			std::unique_ptr<micro_benchmarks::TimingsLogger> time_logger = nullptr
+			std::unique_ptr<micro_benchmarks::TimingsLogger> time_logger = nullptr,
+			const std::function<void(UnbalancedSliced*)>& per_iteration_callback = [](UnbalancedSliced* ub) -> void {return;}
 	) {
 		using default_image_t = image_t<double>;
 

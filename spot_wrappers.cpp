@@ -91,7 +91,7 @@ namespace spot_wrappers {
 			micro_benchmarks::TimingsLogger benchmarks = *(this->timings);
 			return {benchmarks};
 		} else {
-			return {0};
+			return micro_benchmarks::TimingsLogger();
 		}
 	}
 
