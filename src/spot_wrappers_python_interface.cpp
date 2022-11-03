@@ -4,6 +4,9 @@
 
 #include "spot_wrappers.hpp"
 
+#define STRINGIFY(x) #x
+#define MACRO_STRINGIFY(x) STRINGIFY(x)
+
 PYBIND11_MODULE(_spot, spot_module) {
 	// Those argument literals are __really__ useful ...
 	using namespace pybind11::literals;
@@ -154,4 +157,10 @@ PYBIND11_MODULE(_spot, spot_module) {
 			return fmt::format("<spot_wrappers::FISTWrapperRandomModels with {} and {} samples>", fist.get_source_distribution_size(), fist.get_target_distribution_size());
 		})
 		.doc() = "Loads two point clouds from OFF files and registers them.";
+
+	#ifdef VERSION_INFO
+	spot_module.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+	#else
+	spot_module.attr("__version__") = "dev";
+	#endif
 }
