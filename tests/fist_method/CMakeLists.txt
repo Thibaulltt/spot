@@ -2,8 +2,8 @@ ENABLE_TESTING()
 
 ADD_EXECUTABLE(fist_translation_only
 	fist_translation_only.cpp
-	../../UnbalancedSliced.cpp
-	../../micro_benchmark.cpp
+	../../src/UnbalancedSliced.cpp
+	../../src/micro_benchmark.cpp
 )
 TARGET_LINK_LIBRARIES(fist_translation_only
 	PUBLIC OpenMP::OpenMP_CXX
@@ -17,8 +17,8 @@ ADD_TEST(
 
 ADD_EXECUTABLE(fist_rigidbody
 	fist_rigidbody.cpp
-	../../UnbalancedSliced.cpp
-	../../micro_benchmark.cpp
+	../../src/UnbalancedSliced.cpp
+	../../src/micro_benchmark.cpp
 )
 TARGET_LINK_LIBRARIES(fist_rigidbody
 	PUBLIC OpenMP::OpenMP_CXX

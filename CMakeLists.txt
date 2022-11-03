@@ -38,20 +38,20 @@ ENDIF()
 ADD_COMPILE_OPTIONS(${SPOT_COMPILE_FLAGS})
 
 # Add the definitions to glm :
-ADD_LIBRARY(glm_bridge INTERFACE glm_bridge.hpp)
+ADD_LIBRARY(glm_bridge INTERFACE external/glm_bridge.hpp)
 TARGET_LINK_LIBRARIES(glm_bridge INTERFACE glm)
 # Add the definitions to fmtlib :
-ADD_LIBRARY(fmt_bridge INTERFACE fmt_bridge.hpp)
+ADD_LIBRARY(fmt_bridge INTERFACE external/fmt_bridge.hpp)
 TARGET_LINK_LIBRARIES(fmt_bridge INTERFACE fmt::fmt)
 
 ADD_SUBDIRECTORY(tests)
 
 # Add the executables :
 ADD_EXECUTABLE(FIST
-	mainFIST.cpp
-	UnbalancedSliced.cpp
-	micro_benchmark.cpp
-	program_options.cpp
+	src/mainFIST.cpp
+	src/UnbalancedSliced.cpp
+	src/micro_benchmark.cpp
+	src/program_options.cpp
 )
 TARGET_LINK_LIBRARIES(FIST
 	PUBLIC OpenMP::OpenMP_CXX
@@ -60,9 +60,9 @@ TARGET_LINK_LIBRARIES(FIST
 	PUBLIC Boost::program_options
 )
 ADD_EXECUTABLE(colorTransfer
-	mainColorTransfer.cpp
-	UnbalancedSliced.cpp
-	micro_benchmark.cpp
+	src/mainColorTransfer.cpp
+	src/UnbalancedSliced.cpp
+	src/micro_benchmark.cpp
 )
 TARGET_LINK_LIBRARIES(colorTransfer
 	PUBLIC OpenMP::OpenMP_CXX
@@ -70,10 +70,10 @@ TARGET_LINK_LIBRARIES(colorTransfer
 )
 
 ADD_LIBRARY(spot_wrappers SHARED
-	spot_wrappers.hpp
-	spot_wrappers.cpp
-	micro_benchmark.cpp
-	UnbalancedSliced.cpp
+	src/spot_wrappers.hpp
+	src/spot_wrappers.cpp
+	src/micro_benchmark.cpp
+	src/UnbalancedSliced.cpp
 )
 TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC OpenMP::OpenMP_CXX
@@ -82,7 +82,7 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC pybind11::pybind11
 )
 
-pybind11_add_module(spot spot_wrappers_python_interface.cpp)
+pybind11_add_module(spot src/spot_wrappers_python_interface.cpp)
 TARGET_LINK_LIBRARIES(spot PRIVATE spot_wrappers)
 
 INSTALL(

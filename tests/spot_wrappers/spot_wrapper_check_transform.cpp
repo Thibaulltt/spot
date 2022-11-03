@@ -2,8 +2,8 @@
 // Created by thib on 26/09/22.
 //
 
-#include "../../spot_wrappers.hpp"
-#include "../../fmt_bridge.hpp"
+#include "../../src/spot_wrappers.hpp"
+#include "../../external/fmt_bridge.hpp"
 #include "../path_setup.hpp"
 
 using float_t = glm::vec3::value_type;

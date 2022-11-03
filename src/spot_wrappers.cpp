@@ -1,5 +1,5 @@
 #include "./spot_wrappers.hpp"
-#include "./fmt_bridge.hpp"
+#include "../external/fmt_bridge.hpp"
 
 namespace spot_wrappers {
 

@@ -28,7 +28,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "./micro_benchmark.hpp"
+#include "micro_benchmark.hpp"
 
 #include <iostream>
 #include <vector>
@@ -49,7 +49,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wvarargs"
 #define cimg_display 0
-#include "CImg.h"
+#include "../external/CImg.h"
 #pragma clang diagnostic pop
 
 #ifdef _MSC_VER

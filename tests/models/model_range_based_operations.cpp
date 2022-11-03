@@ -2,8 +2,8 @@
 // Created by thib on 26/08/22.
 //
 
-#include "../../fmt_bridge.hpp"
-#include "../../model.hpp"
+#include "../../external/fmt_bridge.hpp"
+#include "../../src/model.hpp"
 #include "../path_setup.hpp"
 
 constexpr float max_fp32_tolerance = 1e-6;

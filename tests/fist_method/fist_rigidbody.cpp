@@ -3,8 +3,8 @@
 // Tests out the FIST algorithm on real datasets, with a rigidbody transform.
 //
 
-#include "../../UnbalancedSliced.h" // FIXME : If we include this header below model.hpp, causes ADL/named argument lookup failure on memset()
-#include "../../model.hpp"
+#include "../../src/UnbalancedSliced.h" // FIXME : If we include this header below model.hpp, causes ADL/named argument lookup failure on memset()
+#include "../../src/model.hpp"
 #include "../path_setup.hpp"
 
 int main() {

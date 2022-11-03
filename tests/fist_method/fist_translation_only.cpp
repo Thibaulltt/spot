@@ -3,8 +3,8 @@
 // Tests out the FIST algorithm on real datasets, with a translation only.
 //
 
-#include "../../UnbalancedSliced.h"
-#include "../../model.hpp"
+#include "../../src/UnbalancedSliced.h"
+#include "../../src/model.hpp"
 #include "../path_setup.hpp"
 
 #include <glm/gtx/io.hpp>

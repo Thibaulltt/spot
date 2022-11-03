@@ -11,9 +11,9 @@
 #include <random>
 
 #include "../path_setup.hpp"
-#include "../../model.hpp"
-#include "../../glm_bridge.hpp"
-#include "../../fmt_bridge.hpp"
+#include "../../src/model.hpp"
+#include "../../external/glm_bridge.hpp"
+#include "../../external/fmt_bridge.hpp"
 
 /// @brief Generate a sample of a given dimension scaled up by a given factor.
 /// @tparam DIM The dimension of the sample to generate.

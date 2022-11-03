@@ -2,7 +2,7 @@
 // Created by thibault on 21/09/22.
 //
 
-#include "../../spot_wrappers.hpp"
+#include "../../src/spot_wrappers.hpp"
 #include "../path_setup.hpp"
 
 int main(int argc, char* argv[]) {

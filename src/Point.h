@@ -28,7 +28,7 @@
 */
 #pragma once
 
-#include "glm_bridge.hpp"
+#include "../external/glm_bridge.hpp"
 
 /// @brief Simple many-dimensional sample representation.
 /// @tparam DIM The dimensionality of the samples.

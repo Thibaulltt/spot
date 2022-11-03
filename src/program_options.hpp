@@ -9,7 +9,7 @@
  *=============================================
  */
 
-#include "fmt_bridge.hpp"
+#include "../external/fmt_bridge.hpp"
 
 #include <boost/program_options.hpp>
 

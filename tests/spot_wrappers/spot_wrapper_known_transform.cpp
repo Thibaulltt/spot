@@ -3,7 +3,7 @@
 // Checks the FIST method can output a known transform onto two of the same point clouds.
 //
 
-#include "../../spot_wrappers.hpp"
+#include "../../src/spot_wrappers.hpp"
 #include "../path_setup.hpp"
 
 int main(int argc, char* argv[]) {

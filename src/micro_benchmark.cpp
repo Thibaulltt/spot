@@ -3,7 +3,7 @@
 //
 
 #include "./micro_benchmark.hpp"
-#include "fmt_bridge.hpp"
+#include "../external/fmt_bridge.hpp"
 
 #include <iostream>
 #include <numeric>

@@ -12,8 +12,8 @@
 #include "micro_benchmark.hpp"
 #include "UnbalancedSliced.h"
 #include "model.hpp"
-#include "glm_bridge.hpp"
-#include "fmt_bridge.hpp"
+#include "../external/glm_bridge.hpp"
+#include "../external/fmt_bridge.hpp"
 
 #include <pybind11/attr.h>
 #include <pybind11/buffer_info.h>

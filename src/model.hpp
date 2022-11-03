@@ -9,7 +9,7 @@
  *=============================================
  */
 
-#include "glm_bridge.hpp"
+#include "../external/glm_bridge.hpp"
 #include "Point.h"
 
 #include <string>
