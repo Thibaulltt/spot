@@ -8,3 +8,6 @@ cmake-*/
 # Final executables :
 FIST
 colorTransfer
+
+# Automatically-generated folder when installing the module :
+spot.egg-info/

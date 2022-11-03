@@ -1,0 +1,31 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "ninja",
+    "cmake>=3.12",
+    "pybind11"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="spot"
+description="Wrappers around the SPOT method by Bonneel and Coeurjolly (SIGGRAPH 2019)."
+readme="README.md"
+requires-python=">=3.7"
+dynamic = ["version"]
+
+[[project.authors]]
+name="Nicolas Bonneel"
+email="nicolas.bonneel@liris.cnrs.fr"
+
+[[project.authors]]
+name="David Coeurjolly"
+email="david.coeurjolly@cnrs.fr"
+
+[[project.authors]]
+name="Thibault de Villèle"
+email="thibault.de-villele@umontpellier.fr"
+
+[project.license]
+file="LICENCE.txt"
