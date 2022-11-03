@@ -8,6 +8,7 @@
 #include <iostream>
 #include <numeric>
 #include <algorithm>
+#include <functional>
 
 namespace micro_benchmarks {
 
@@ -89,38 +90,48 @@ namespace micro_benchmarks {
 		this->stats->percentile_99 = duration_t(compute_percentile(99.0));
 
 		// Cast data from 'double' --> chrono duration of fine_duration_t in 'double' --> chrono of coarse_duration_t :
-		this->stats->total_running_time = to_coarse_duration(fine_duration_t(sum));
-		this->stats->mean = to_coarse_duration(fine_duration_t(raw_mean));
-		this->stats->min = to_coarse_duration(sorted_data[0]);
-		this->stats->max = to_coarse_duration(sorted_data[this->iteration_times.size()-1]);
-		this->stats->variance = to_coarse_duration(fine_duration_t(raw_variance));
-		this->stats->std_dev = to_coarse_duration(fine_duration_t(std::sqrt(raw_variance)));
+		this->stats->total_running_time = to_coarse_t(fine_duration_t(sum));
+		this->stats->mean = to_coarse_t(fine_duration_t(raw_mean));
+		this->stats->min = to_coarse_t(sorted_data[0]);
+		this->stats->max = to_coarse_t(sorted_data[this->iteration_times.size() - 1]);
+		this->stats->variance = to_coarse_t(fine_duration_t(raw_variance));
+		this->stats->std_dev = to_coarse_t(fine_duration_t(std::sqrt(raw_variance)));
 	}
 
 	void TimingsLogger::print_timings(const std::string &banner_message = "", const std::string &message_prefix = "") const {
 		std::string prefix = message_prefix;
-		if (not message_prefix.empty()) { prefix = message_prefix + " "; }
-
-		auto to_seconds = [](coarse_duration_t const& dur) -> std::chrono::duration<double> {
+		if (not prefix.empty()) { prefix = message_prefix + " "; }
+		// Convert durations to seconds :
+		auto to_secs = [](coarse_duration_t const& dur) -> std::chrono::duration<double> {
 			return std::chrono::duration_cast<std::chrono::duration<double>>(dur);
 		};
 
-		if (not banner_message.empty()) { std::cout << prefix << "--- " << banner_message << " ---" << '\n'; }
-		std::cout << prefix << "Time statistics for the current run :" << '\n';
-		std::cout << prefix << fmt::format("- Total time : {: >24.8}", to_seconds(this->stats->total_running_time)) << '\n';
-		std::cout << prefix << fmt::format("- Mean time  : {: >24.8}", this->stats->mean) << '\n';
-		std::cout << prefix << fmt::format("- Std-dev    : {: >24.8}", this->stats->std_dev) << '\n';
-		std::cout << prefix << fmt::format("- Min        : {: >24.8}", this->stats->min) << '\n';
-		std::cout << prefix << fmt::format("- Max        : {: >24.8}", this->stats->max) << '\n';
-		std::cout << prefix << "Significant values of the series :\n";
-		std::cout << prefix << fmt::format("- Quartile 1 : {: >24.8}", to_coarse_duration(this->stats->quartile_1)) << '\n';
-		std::cout << prefix << fmt::format("- Median     : {: >24.8}", to_coarse_duration(this->stats->median)) << '\n';
-		std::cout << prefix << fmt::format("- Quartile 3 : {: >24.8}", to_coarse_duration(this->stats->quartile_3)) << '\n';
-		std::cout << prefix << fmt::format("- 90th perc. : {: >24.8}", to_coarse_duration(this->stats->percentile_90)) << '\n';
-		std::cout << prefix << fmt::format("- 95th perc. : {: >24.8}", to_coarse_duration(this->stats->percentile_95)) << '\n';
-		std::cout << prefix << fmt::format("- 99th perc. : {: >24.8}", to_coarse_duration(this->stats->percentile_99)) << '\n';
+		if (not banner_message.empty()) {
+			std::cout << prefix << "--- " << banner_message << " ---" << '\n';
+		}
 
-		if (not banner_message.empty()) { std::cout << prefix << "--- " << banner_message << " ---" << '\n'; }
+		if (this->stats) {
+			std::cout << prefix << "Time statistics for the current run :" << '\n';
+			std::cout << prefix << fmt::format("- Total time : {: >24.8}\n", to_secs(this->stats->total_running_time));
+			std::cout << prefix << fmt::format("- Mean time  : {: >24.8}\n", this->stats->mean);
+			std::cout << prefix << fmt::format("- Std-dev    : {: >24.8}\n", this->stats->std_dev);
+			std::cout << prefix << fmt::format("- Min        : {: >24.8}\n", this->stats->min);
+			std::cout << prefix << fmt::format("- Max        : {: >24.8}\n", this->stats->max);
+			std::cout << prefix << "Significant values of the series :\n";
+			std::cout << prefix << fmt::format("- Quartile 1 : {: >24.8}\n", to_coarse_t(this->stats->quartile_1));
+			std::cout << prefix << fmt::format("- Median     : {: >24.8}\n", to_coarse_t(this->stats->median));
+			std::cout << prefix << fmt::format("- Quartile 3 : {: >24.8}\n", to_coarse_t(this->stats->quartile_3));
+			std::cout << prefix << fmt::format("- 90th perc. : {: >24.8}\n", to_coarse_t(this->stats->percentile_90));
+			std::cout << prefix << fmt::format("- 95th perc. : {: >24.8}\n", to_coarse_t(this->stats->percentile_95));
+			std::cout << prefix << fmt::format("- 99th perc. : {: >24.8}\n", to_coarse_t(this->stats->percentile_99));
+		}
+		else {
+			std::cout << prefix << "<no timings computed for this run yet>\n";
+		}
+
+		if (not banner_message.empty()) {
+			std::cout << prefix << "--- " << banner_message << " ---" << '\n';
+		}
 	}
 
 	void TimingsLogger::reset_timings(unsigned int number_laps) {

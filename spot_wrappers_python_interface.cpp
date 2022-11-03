@@ -36,10 +36,10 @@ PYBIND11_MODULE(spot, spot_module) {
 	/* ------------------------ */
 	/* Declare used GLM types : */
 	/* ------------------------ */
-	define_glm_type_matrix(glm::mat4{}, "glm_mat4", spot_module);
-	define_glm_type_matrix(glm::mat3{}, "glm_mat3", spot_module);
-	define_glm_type_vector(glm::vec4{}, "glm_vec4", spot_module);
-	define_glm_type_vector(glm::vec3{}, "glm_vec3", spot_module);
+	define_glm_type_matrix(glm::mat4{}, "mat4", spot_module);
+	define_glm_type_matrix(glm::mat3{}, "mat3", spot_module);
+	define_glm_type_vector(glm::vec4{}, "vec4", spot_module);
+	define_glm_type_vector(glm::vec3{}, "vec3", spot_module);
 
 	/* ----------------------- */
 	/* Bind the point struct : */
@@ -64,7 +64,7 @@ PYBIND11_MODULE(spot, spot_module) {
 		.def_property_readonly("percentile_99", 		[&](const Stats& stats) { return duration_to_time(stats.percentile_99); })
 		.def_property_readonly("total_running_time", 	[&](const Stats& stats) { return coarse_to_time(stats.total_running_time); })
 		.doc() = "A simple structure to get some stats from a time series.";
-	pybind11::class_<Timings>(spot_module, "TimingsLogger")
+	pybind11::class_<Timings>(spot_module, "TimingsLogger", pybind11::buffer_protocol())
 	    .def(pybind11::init<unsigned int>(), "pre_allocated_laps"_a, pydoc("Allocates a timer with enough \"spots\" to keep all iteration times in memory"))
 		.def("start", &Timings::start_lap, pydoc("Starts a lap on the timer."))
 		.def("stop", &Timings::stop_lap, pydoc("Stops the current lap, and computes the time delta for this iteration."))

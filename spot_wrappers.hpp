@@ -260,8 +260,28 @@ auto define_glm_type_matrix(glm::mat<C, R, T, Q> const& matrix_ctad, const std::
 				{ sizeof(T) * R, sizeof(T) } 				/* Strides in bytes for each index */
 			);
 		})
+		.def("__str__", [](const glm::mat<C, R, T, Q>& m) {
+			std::string base_msg = fmt::format("mat{}x{}({{}}\n)", C, R);
+			std::string content;
+			for (glm::length_t j = 0; j < R; ++j) {
+				for (glm::length_t i = 0; i < C; ++i) {
+					content += fmt::format("{}", m[i][j]);
+					content += (i == C-1 && j == R-1) ? "" : ", ";
+				}
+				content += (j == R-1) ? "" : "\n       "; // pretty-print ! aligned rows !
+			}
+			return fmt::format(base_msg, content);
+		})
 		.def("__repr__", [](const glm::mat<C, R, T, Q>& m) {
-			return fmt::format("<interface to glm::mat{}x{}>", C, R);
+			std::string base_msg = fmt::format("mat{}x{}({{}})", C, R);
+			std::string content;
+			for (glm::length_t j = 0; j < R; ++j) {
+				for (glm::length_t i = 0; i < C; ++i) {
+					content += (i == C-1 && j == R-1) ? fmt::format("{}", m[i][j]) : fmt::format("{}, ", m[i][j]);
+				}
+				// no pretty-print here :(
+			}
+			return fmt::format(base_msg, content);
 		});
 }
 
@@ -289,9 +309,28 @@ auto define_glm_type_vector(glm::vec<L, T, Q> const& vec_ctad, const std::string
 				{ sizeof(T) } 								/* Strides in bytes for each index */
 			);
 		})
+		.def("__str__", [](const glm::vec<L, T, Q>& v) {
+			std::string base_msg = fmt::format("vec{}({{}}\n)", L);
+			std::string content;
+			for (glm::length_t i = 0; i < L; ++i) {
+				content += fmt::format("{}", v[i]);
+				content += (i == L-1) ? "" : ",\n     ";
+			}
+			return fmt::format(base_msg, content);
+		})
 		.def("__repr__", [](const glm::vec<L, T, Q>& v) {
-			return fmt::format("<interface to glm::vec{}>", L);
+			std::string base_msg = fmt::format("vec{}({{}})", L);
+			std::string content;
+			for (glm::length_t i = 0; i < L; ++i) {
+				content += (i == L-1) ? fmt::format("{}", v[i]) : fmt::format("{}, ", v[i]);
+			}
+			return fmt::format(base_msg, content);
 		});
+}
+
+template<typename T, int DIM>
+std::string format_point_typename(const Point<DIM, T>& p) {
+	return fmt::format("Point{}{}", DIM, typeid(T).name()[0]);
 }
 
 /// @brief Declares a Point type that can be used within Python using pybind11's primitives.
@@ -310,6 +349,15 @@ auto define_spot_point_type(const std::string& type_name, pybind11::module_& m) 
 				/* e */	{ DIM },
 				/* f */	{ sizeof(T) }
 			};
+		})
+		.def("__repr__", [&](const Point<DIM, T>& point) -> std::string {
+			// std::string msg_base = fmt::format("{}({{}})", format_point_typename(point));
+			std::string msg_base = fmt::format("{}({{}})", format_point_typename(point));
+			std::string content;
+			for (int i = 0; i < DIM; ++i) {
+				content += (i == DIM-1) ? fmt::format("{}", point[i]) : fmt::format("{}, ", point[i]);
+			}
+			return fmt::format(msg_base, content);
 		})
 		.doc() = fmt::format("A Python wrapper around a {}-dimensional point.", DIM);
 }

@@ -106,7 +106,7 @@ namespace micro_benchmarks {
 	};
 
 	template<typename rep, typename period>
-	std::chrono::duration<double, std::milli> to_coarse_duration(const std::chrono::duration<rep, period> &other_duration) {
+	std::chrono::duration<double, std::milli> to_coarse_t(const std::chrono::duration<rep, period> &other_duration) {
 		return std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(other_duration);
 	}
 
