@@ -82,10 +82,10 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 	PUBLIC pybind11::pybind11
 )
 
-pybind11_add_module(spot src/spot_wrappers_python_interface.cpp)
-TARGET_LINK_LIBRARIES(spot PRIVATE spot_wrappers)
+pybind11_add_module(_spot src/spot_wrappers_python_interface.cpp)
+TARGET_LINK_LIBRARIES(_spot PRIVATE spot_wrappers)
 
 INSTALL(
-	TARGETS spot
+	TARGETS _spot
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/spot
 )

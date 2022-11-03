@@ -4,7 +4,7 @@
 
 #include "spot_wrappers.hpp"
 
-PYBIND11_MODULE(spot, spot_module) {
+PYBIND11_MODULE(_spot, spot_module) {
 	// Those argument literals are __really__ useful ...
 	using namespace pybind11::literals;
 	// Shorten the definition of documentation string literals :
