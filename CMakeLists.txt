@@ -13,12 +13,6 @@ SET(CMAKE_CXX_STANDARD 14)
 MESSAGE(STATUS "This can only compile on macOS or Linux.")
 MESSAGE(STATUS "Use the Visual Studio pre-packaged solutions otherwise.")
 
-INCLUDE(CTest)
-IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Release)
-	MESSAGE(STATUS "Enabled testing.")
-	ENABLE_TESTING()
-ENDIF()
-
 # Find required packages :
 FIND_PACKAGE(OpenMP REQUIRED)
 FIND_PACKAGE(fmt REQUIRED)
@@ -44,7 +38,13 @@ TARGET_LINK_LIBRARIES(glm_bridge INTERFACE glm)
 ADD_LIBRARY(fmt_bridge INTERFACE external/fmt_bridge.hpp)
 TARGET_LINK_LIBRARIES(fmt_bridge INTERFACE fmt::fmt)
 
-ADD_SUBDIRECTORY(tests)
+MESSAGE(STATUS "Current CMake version executed is ${CMAKE_VERSION}")
+IF(DEFINED CMAKE_ENABLE_TESTS)
+	INCLUDE(CTest)
+	MESSAGE(STATUS "Enabled testing.")
+	ENABLE_TESTING()
+	ADD_SUBDIRECTORY(tests)
+ENDIF()
 
 # Add the executables :
 ADD_EXECUTABLE(FIST
