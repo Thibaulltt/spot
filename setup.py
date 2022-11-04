@@ -61,8 +61,9 @@ class CMakeBuild(build_ext):
 		if "CMAKE_ARGS" in os.environ:
 			cmake_args += [item for item in os.environ["CMAKE_ARGS"].split(" ") if item]
 
-		# In this example, we pass in the version to C++. You might not need to.
-		cmake_args += [f"-DVERSION_INFO=\"{module_information['version']}\""]  # type: ignore[attr-defined]
+		# The SPOT library might have a version in CMake, but we're building the python wrappers
+        # with their own version numbering (both updated manually) :
+		cmake_args += [f"-DSPOT_PYTHON_VERSION_OVERRIDE=\"{module_information['version']}\""]  # type: ignore[attr-defined]
 
 		# Using Ninja-build since it a) is available as a wheel and b)
 		# multithreads automatically. MSVC would require all variables be
