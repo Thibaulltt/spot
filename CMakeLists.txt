@@ -1,7 +1,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
+
+# Find out the "real" version of the project :
+INCLUDE(./override_version.cmake)
+
 PROJECT(spot
-	VERSION 1
+	VERSION ${_SPOT_FULL_VERSION}
 	DESCRIPTION "SPOT : Sliced Partial Optimal Transport. Method applied to ICP and histogram matching."
+	HOMEPAGE_URL "https//github.com/thibaulltt/spot"
 	LANGUAGES C CXX
 )
 
@@ -84,6 +89,7 @@ TARGET_LINK_LIBRARIES(spot_wrappers
 
 pybind11_add_module(_spot src/spot_wrappers_python_interface.cpp)
 TARGET_LINK_LIBRARIES(_spot PRIVATE spot_wrappers)
+TARGET_COMPILE_DEFINITIONS(_spot PRIVATE VERSION_INFO="${_SPOT_PYTHON_WRAPPER_VERSION}")
 
 INSTALL(
 	TARGETS _spot

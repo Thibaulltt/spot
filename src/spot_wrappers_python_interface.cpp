@@ -161,6 +161,6 @@ PYBIND11_MODULE(_spot, spot_module) {
 	#ifdef VERSION_INFO
 	spot_module.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 	#else
-	spot_module.attr("__version__") = "dev";
+	spot_module.attr("__version__") = "<undefined, see cmake>";
 	#endif
 }
